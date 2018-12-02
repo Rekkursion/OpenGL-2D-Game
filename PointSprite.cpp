@@ -44,18 +44,34 @@ static inline float random_float() {
 
 PointSprite::PointSprite() {
 	counter = 0;
+
+	starsNum = INIT_STARS_NUM;
+	starsSpeed = 1;
+	starsAngle = 0.0f;
 }
 
 PointSprite::~PointSprite() {}
 
 void PointSprite::pointSpriteInit(const char* vs, const char* fs, const char* textureFilePath, float offsetY) {
-	// Point Sprite
+	char** vsSource = loadShaderSource(vs);
+	char** fsSource = loadShaderSource(fs);
+
+	if (vsSource == NULL || fsSource == NULL)
+		return;
+
+	// delete old objects
+	glDeleteProgram(pointSpriteProgram);
+	glDeleteShader(pointSpriteVS);
+	glDeleteShader(pointSpriteFS);
+	glDeleteVertexArrays(1, &pointSpriteVAO);
+	glDeleteBuffers(1, &pointSpriteVBO);
+	glDeleteTextures(1, &pointSpriteTexture);
+
+
 	pointSpriteProgram = glCreateProgram();
 
 	pointSpriteVS = glCreateShader(GL_VERTEX_SHADER);
 	pointSpriteFS = glCreateShader(GL_FRAGMENT_SHADER);
-	char** vsSource = loadShaderSource(vs);
-	char** fsSource = loadShaderSource(fs);
 	glShaderSource(pointSpriteVS, 1, vsSource, NULL);
 	glShaderSource(pointSpriteFS, 1, fsSource, NULL);
 	freeShaderSource(vsSource);
@@ -74,6 +90,7 @@ void PointSprite::pointSpriteInit(const char* vs, const char* fs, const char* te
 
 	pointSpritePorjectionLocation = glGetUniformLocation(pointSpriteProgram, "proj_matrix");
 	pointSpriteTimeLocation = glGetUniformLocation(pointSpriteProgram, "time");
+	pointSpriteAngleLocation = glGetUniformLocation(pointSpriteProgram, "angle");
 
 	glGenVertexArrays(1, &pointSpriteVAO);
 	glBindVertexArray(pointSpriteVAO);
@@ -85,11 +102,11 @@ void PointSprite::pointSpriteInit(const char* vs, const char* fs, const char* te
 
 	glGenBuffers(1, &pointSpriteVBO);
 	glBindBuffer(GL_ARRAY_BUFFER, pointSpriteVBO);
-	glBufferData(GL_ARRAY_BUFFER, NUM_STARS * sizeof(star_t), NULL, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, starsNum * sizeof(star_t), NULL, GL_STATIC_DRAW);
 
-	star_t * star = (star_t *)glMapBufferRange(GL_ARRAY_BUFFER, 0, NUM_STARS * sizeof(star_t), GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT);
-	for (int i = 0; i < NUM_STARS; i++) {
-		star[i].position[0] = (random_float() * 2.0f - 1.0f) * 550.0f;
+	star_t * star = (star_t *)glMapBufferRange(GL_ARRAY_BUFFER, 0, starsNum * sizeof(star_t), GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT);
+	for (int i = 0; i < starsNum; i++) {
+		star[i].position[0] = (random_float() * 2.0f - 1.0f) * 1550.0f;
 		star[i].position[1] = (random_float() * 2.0f - 1.0f - 2.0f - offsetY) * 550.0f;
 		star[i].position[2] = random_float();
 		star[i].color[0] = 0.8f + random_float() * 0.2f;
@@ -120,6 +137,8 @@ void PointSprite::pointSpriteInit(const char* vs, const char* fs, const char* te
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	
+	return;
 }
 
 void PointSprite::render(glm::mat4 proj_matrix) {
@@ -132,7 +151,7 @@ void PointSprite::render(glm::mat4 proj_matrix) {
 	if (counter >= COUNTER_UP_BOUND + 10 * offsetY)
 		counter = -offsetY;
 
-	float currentTime = (float)counter;
+	float currentTime = (float)counter * (float)starsSpeed;
 
 	//currentTime *= 0.1f;
 	//currentTime -= floor(currentTime);
@@ -142,6 +161,7 @@ void PointSprite::render(glm::mat4 proj_matrix) {
 
 	glUniform1f(pointSpriteTimeLocation, currentTime);
 	glUniformMatrix4fv(pointSpritePorjectionLocation, 1, GL_FALSE, &proj_matrix[0][0]);
+	glUniform1f(pointSpriteAngleLocation, starsAngle * (float)counter);
 
 	glEnable(GL_POINT_SPRITE);
 
@@ -151,7 +171,43 @@ void PointSprite::render(glm::mat4 proj_matrix) {
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, pointSpriteTexture);
 	glEnable(GL_PROGRAM_POINT_SIZE);
-	glDrawArrays(GL_POINTS, 0, NUM_STARS);
+	glDrawArrays(GL_POINTS, 0, starsNum);
 	glBindTexture(GL_TEXTURE_2D, 0);
 	glUseProgram(0);
+}
+
+void PointSprite::increaseStarsNum() {
+	starsNum += STARS_NUM_INCREMENT;
+
+	if (starsNum > MAX_STARS_NUM)
+		starsNum = MAX_STARS_NUM;
+
+	return;
+}
+
+void PointSprite::decreaseStarsNum() {
+	starsNum -= STARS_NUM_INCREMENT;
+
+	if (starsNum < 0)
+		starsNum = 0;
+
+	return;
+}
+
+void PointSprite::increaseStarsSpeed() {
+	starsSpeed++;
+}
+
+void PointSprite::decreaseStarsSpeed() {
+	starsSpeed--;
+	if (starsSpeed < 1)
+		starsSpeed = 1;
+}
+
+void PointSprite::increaseStarsAngle() {
+	starsAngle += STARS_ANGLE_INCREMENT;
+}
+
+void PointSprite::decreaseStarsAngle() {
+	starsAngle -= STARS_ANGLE_INCREMENT;
 }

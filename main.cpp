@@ -3,12 +3,15 @@
 #include <cmath>
 #include <ctime>
 #include "Marco.h"
+#include "Enemy.h"
 #include "Scene.h"
-// Rekkursion
 #include "PointSprite.h"
+#include "FrameEffectManager.h"
 
 using namespace glm;
 using namespace std;
+
+#define CGI
 
 /*const int spriteCount = 3;
 const int objectCount = 30;*/
@@ -41,34 +44,30 @@ void My_SpecialKeyUp(int, int, int);
 void My_Timer(int);
 void My_Mouse(int, int, int, int);
 void My_Mouse_Moving(int, int);
-// Rekkursion
-void initFramebufferData(const char*, const char*);
-void createRenderbufferAndTexture4Framebuffer();
+void menuEvents(int option);
+void fboParamMenuEvents(int option);
+
+enum DisplayMode { 
+	NORMAL,
+	POINT_SPRITE_NUMBER,
+	POINT_SPRITE_SPEED,
+	POINT_SPRITE_DIRECTION
+};
+DisplayMode displayMode = DisplayMode::NORMAL;
 
 Marco marco;
 Scene scene;
+//Enemy enemy(Arms::PISTOL, Side::RSIDE, 0.0f, -0.8f);
+vector<Enemy> enemyList;
 
-// Rekkursion
+#ifdef CGI
 PointSprite pointSprite_snow_list[POINT_SPRITE_NUM];
+FrameEffectManager* fboManager = FrameEffectManager::getInstance();
+#endif // CGI
 
 int timerSpeed = 45;
-// Rekkursion
 int windowWidth = 600;
 int windowHeight = 440;
-
-// Rekkursion
-GLuint fbo;
-GLuint texture4fbo;
-GLuint rbo;
-GLuint fboProgram;
-GLuint fboVAO;
-GLuint fboVBO;
-static const GLfloat window_positions[] = {
-	 1.0f, -1.0f,  1.0f,  0.0f,
-	-1.0f, -1.0f,  0.0f,  0.0f,
-	-1.0f,  1.0f,  0.0f,  1.0f,
-	 1.0f,  1.0f,  1.0f,  1.0f
-};
 
 int main(int argc, char *argv[])
 {
@@ -88,7 +87,6 @@ int main(int argc, char *argv[])
 #endif
 
 	glutInitWindowPosition(100, 100);
-	// Rekkursion
 	glutInitWindowSize(windowWidth, windowHeight);
 	glutCreateWindow("METAL SLUG X"); // You cannot use OpenGL functions before this line; The OpenGL context must be created first by glutCreateWindow()!
 #ifdef _MSC_VER
@@ -115,6 +113,18 @@ int main(int argc, char *argv[])
 	glutPassiveMotionFunc(My_Mouse_Moving);
 	glutMotionFunc(My_Mouse_Moving);
 	////////////////////
+
+	// Menu
+	int fboParamMenu = glutCreateMenu(fboParamMenuEvents);
+	glutAddMenuEntry("Number", 0);
+	glutAddMenuEntry("Speed", 1);
+	glutAddMenuEntry("Direction", 2);
+	glutAttachMenu(GLUT_RIGHT_BUTTON);
+
+	glutCreateMenu(menuEvents);
+	glutAddMenuEntry("Normal mode", 9999);
+	glutAddSubMenu("FBO effect parameters", fboParamMenu);
+	glutAttachMenu(GLUT_RIGHT_BUTTON);
 
 	// Enter main event loop.
 	glutMainLoop();
@@ -145,48 +155,134 @@ void My_Init()
 	marco.initialize("../shader/Marco/vertex.vs.glsl", "../shader/Marco/fragment.fs.glsl");
 	scene.initialize("../shader/Scene/vertex.vs.glsl", "../shader/Scene/fragment.fs.glsl");
 
-	// Rekkursion
+	// Enemies
+	cout << "EnemyNum: " << sizeof(mapLocationList) / sizeof(float) << endl;
+	enemyList.clear();
+	enemyList.resize(sizeof(mapLocationList) / sizeof(float));
+	for (int k = 0; k < enemyList.size(); k++) {
+		Enemy ene(armsList[(k % 3)], Side::RSIDE, 0.0, -0.8);
+		ene.initialize("../shader/Enemy/vertex.vs.glsl", "../shader/Enemy/fragment.fs.glsl");
+		ene.setScreenPosX(scene.getPosX());
+		enemyList[k] = ene;
+	}
+
+	#ifdef CGI
 	// Point Sprite - Snow
 	for (int k = 0; k < POINT_SPRITE_NUM; k++)
 		pointSprite_snow_list[k].pointSpriteInit("../shader/PointSprite/Point_Sprite.vs.glsl", "../shader/PointSprite/Point_Sprite.fs.glsl", (((k & 1) == 1) ? "../media/snow.png" : "../media/snowflake.png"), (float)k);
 
-	// Rekkursion
-	initFramebufferData("../shader/FBO/gray.vs.glsl", "../shader/FBO/gray.fs.glsl");
+	// Framebuffer
+	fboManager->initFrameBufferData("../shader/FBO/gray.vs.glsl", "../shader/FBO/gray.fs.glsl");
+	#endif // CGI
 }
 // GLUT callback Functions
 // Display Function
 void My_Display() {
 	//std::cout << "State: " << stateSymbols[marco.state] << std::endl;
+	//std::cout << "display mode: " << displayMode << std::endl;
 
-	// Rekkursion
-	glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	if(marco.blinkingCounter >= 0)
+		marco.blinkingCounter++;
+
+	if (marco.blinkingCounter >= BLINK_TIME)
+		marco.blinkingCounter = -1;
+
+	#ifdef CGI
+	fboManager->enable();
+	#endif // CGI
 
 	// =================================================
 
+	// Initial background
 	glClearColor(0.5f, 0.5f, 0.5f, 0.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	// =================================================
 
+	// Scene render
 	scene.render();
-	// Rekkursion
 	glClear(GL_DEPTH_BUFFER_BIT);
 	glUseProgram(0);
 
 	// =================================================
 
-	// Rekkursion
+	// Pointsprite render
+	#ifdef CGI
 	for (int k = 0; k < POINT_SPRITE_NUM; k++)
 		pointSprite_snow_list[k].render(proj_matrix);
+	#endif // CGI
 
 	// =================================================
 
+	// Enemy render
+	for (int k = 0; k < enemyList.size(); k++) {
+		enemyList[k].setScreenPosX(scene.getPosX());
+
+		bool replay = false;
+		if (enemyList[k].step == 0) {
+			if (enemyList[k].type == Arms::DALLY) {
+				if (enemyList[k].step == 0) {
+					if (enemyList[k].side == LSIDE) {
+						enemyList[k].dallyLeft();
+						replay = enemyList[k].nextFrame(28 * 2);
+					}
+					else if (enemyList[k].side == RSIDE) {
+						enemyList[k].dallyRight();
+						replay = enemyList[k].nextFrame(28 * 2);
+					}
+
+				}
+			}
+			else if (enemyList[k].type == Arms::PISTOL) {
+				if (enemyList[k].side == LSIDE) {
+					enemyList[k].pistolLeft();
+					replay = enemyList[k].nextFrame(12 * 2);
+				}
+				else if (enemyList[k].side == RSIDE) {
+					enemyList[k].pistolRight();
+					replay = enemyList[k].nextFrame(12 * 2);
+				}
+			}
+			else if (enemyList[k].type == Arms::SABER) {
+				if (enemyList[k].side == LSIDE) {
+					enemyList[k].saberLeft();
+					replay = enemyList[k].nextFrame(12 * 2);
+				}
+				else if (enemyList[k].side == RSIDE) {
+					enemyList[k].saberRight();
+					replay = enemyList[k].nextFrame(12 * 2);
+				}
+			}
+			if (replay) {
+				enemyList[k].initSpriteIndex();
+				enemyList[k].step++;
+			}
+		}
+		else {
+		if (enemyList[k].side == LSIDE) {
+			enemyList[k].restLeft();
+			replay = enemyList[k].nextFrame(7 * 2);
+		}
+		else if (enemyList[k].side == RSIDE) {
+			enemyList[k].restRight();
+			replay = enemyList[k].nextFrame(7 * 2);
+		}
+		if (replay) {
+			enemyList[k].initSpriteIndex();
+			enemyList[k].step++;
+			if (enemyList[k].step > 3)
+				enemyList[k].step = 0;
+		}
+	}
+	}
+
+	// =================================================
+
+	// Marco Action
 	bool isFinished = false;
+
 	// Left
-	if (marco.getKeyboard(GLUT_KEY_LEFT)) 
-	{
-		timerSpeed = 45;
+	if (marco.getKeyboard(GLUT_KEY_LEFT)) {
 		if (marco.state == State::JUMP || marco.state == State::FALL) {
 			marco.direction = Direction::LEFT;
 		}
@@ -194,14 +290,14 @@ void My_Display() {
 		else {
 			marco.state = State::WALK;
 
-			if(marco.direction == RIGHT) {
+			if (marco.direction == RIGHT) {
 				marco.direction = LEFT;
-				marco.nextFrame(4);
 				marco.RtoL();
+				marco.nextFrame(4);
 			}
 			else {
-				marco.nextFrame(13);
 				marco.walkLeft();
+				marco.nextFrame(13);
 			}
 
 			scene.moveBG(false);
@@ -218,23 +314,21 @@ void My_Display() {
 				}
 			}
 			if (scene.atTail) {
-			if (marco.atCentre) {
-				scene.canMove = true;
-				marco.canMove = false;
-			}
+				if (marco.atCentre) {
+					scene.canMove = true;
+					marco.canMove = false;
+				}
 
-			else {
-				scene.canMove = false;
-				marco.canMove = true;
+				else {
+					scene.canMove = false;
+					marco.canMove = true;
+				}
 			}
-		}
 		}
 	}
 
 	// Right
-	else if (marco.getKeyboard(GLUT_KEY_RIGHT)) 
-	{
-		timerSpeed = 45;
+	else if (marco.getKeyboard(GLUT_KEY_RIGHT)) {
 		if (marco.state == State::JUMP || marco.state == State::FALL) {
 			marco.direction = Direction::RIGHT;
 		}
@@ -244,14 +338,14 @@ void My_Display() {
 
 			if (marco.direction == LEFT) {
 				marco.direction = RIGHT;
-				marco.nextFrame(4);
 				marco.LtoR();
+				marco.nextFrame(4);
 			}
 			else {
-				marco.nextFrame(13);
 				marco.walkRight();
+				marco.nextFrame(13);
 			}
-		
+
 			scene.moveBG(true);
 
 			if (scene.atHead) {
@@ -266,122 +360,135 @@ void My_Display() {
 				}
 			}
 			if (scene.atTail) {
-			if (marco.atCentre) {
-				scene.canMove = false;
-				marco.canMove = true;
-			}
+				if (marco.atCentre) {
+					scene.canMove = false;
+					marco.canMove = true;
+				}
 
-			else {
-				scene.canMove = false;
-				marco.canMove = true;
+				else {
+					scene.canMove = false;
+					marco.canMove = true;
+				}
 			}
-		}
 		}
 	}
 
 	// Up
-	else if (marco.getKeyboard(GLUT_KEY_UP)) 
-	{
-		timerSpeed = 45;
-		if (marco.state != State::UP) {
+	else if (marco.getKeyboard(GLUT_KEY_UP)) {
+		cout << marco.state << endl;
+
+		if (marco.state != State::IDLEUP) {
 			if (marco.direction == LEFT) {
-				marco.nextFrame(5);
 				marco.upLeft();
-			}
-			else if (marco.direction == RIGHT) {
 				marco.nextFrame(5);
-				marco.upRight();
-			}
-
-			marco.state = State::UP;
-		}
-		else {
-			if (marco.direction == LEFT) {
-				marco.nextFrame(1);
-				marco.idleUpLeft();
 			}
 			else if (marco.direction == RIGHT) {
-				marco.nextFrame(1);
-				marco.idleUpRight();
+				marco.upRight();
+				marco.nextFrame(5);
 			}
+			marco.state = State::IDLEUP;
+		}
+		else if (marco.state == State::IDLEUP) {
+			if (marco.direction == LEFT) {
+				marco.idleUpLeft();
+				marco.nextFrame(1);
+			}
+			else if (marco.direction == RIGHT) {
+				marco.idleUpRight();
+				marco.nextFrame(1);
+			}
+			marco.state = State::IDLEUP;
+		}
+		else if (marco.state == State::GUNUP) {
+			cout << "GUNUP\n";
+			if (marco.direction == LEFT) {
+				marco.shootUpLeft();
+				isFinished = marco.nextFrame(12);
+			}
+			else if (marco.direction == RIGHT) {
+				marco.shootUpRight();
+				isFinished = marco.nextFrame(12);
+			}
+			if (isFinished) {
+				marco.state = State::IDLEUP;
+				marco.initSpriteIndex();
+			}
+			else
+				marco.state = State::GUNUP;
 		}
 	}
 
-	// Jump
-	else if (marco.getKeyboard(' '))
-	{
-		if (marco.state == State::IDLE || marco.state == State::WALK) 
-		{
-		}
-	}
-	
 	// Idle
 	else {
-		if (marco.state == State::WALK) 
-		{
+		if (marco.state == State::WALK) {
 			if (marco.direction == LEFT) {
-				marco.nextFrame(8);
 				marco.stopLeft();
+				marco.nextFrame(8);
 			}
 			else if (marco.direction == RIGHT) {
-				marco.nextFrame(8);
 				marco.stopRight();
+				marco.nextFrame(8);
 			}
 			if (marco.state == State::WALK) {
-				marco.state = State::IDLE;
+				marco.state = State::STOP;
 			}
 		}
-		else if (marco.state == State::UP) 
-		{
+		else if (marco.state == State::IDLEUP) {
 			if (marco.direction == LEFT) {
-				marco.nextFrame(5);
 				marco.downLeft();
+				marco.nextFrame(5);
 			}
 			else if (marco.direction == RIGHT) {
-				marco.nextFrame(5);
 				marco.downRight();
+				marco.nextFrame(5);
 			}
-
 			marco.state = State::IDLE;
 		}
-		else if (marco.state == State::JUMP) 
-		{
+		else if (marco.state == State::JUMP) {
 
 		}
 		else if (marco.state == State::FALL) {
 
 		}
+		else if (marco.state == State::STOP) {
+
+		}
+		else if (marco.state == State::KNIFE) {
+
+		}
+		else if (marco.state == State::GUN) {
+		}
+		else if (marco.state == State::GRENADE) {
+
+		}
+
+		// Idle
 		else {
 			if (marco.direction == LEFT) {
-				marco.nextFrame(1);
 				marco.idleLeft();
+				marco.nextFrame(1);
 			}
 			else if (marco.direction == RIGHT) {
-				marco.nextFrame(1);
 				marco.idleRight();
+				marco.nextFrame(1);
 			}
 		}
 	}
 
 	// =================================================
 
-	if (marco.state == State::JUMP) 
-	{
-		// Rekkursion
-		//timerSpeed = 20;
-		timerSpeed = 45;
-
+	// Jump
+	if (marco.state == State::JUMP) {
 		if (marco.direction == LEFT) {
 			marco.jumpLeft();
-			isFinished = marco.nextFrame(19);
+			isFinished = marco.nextFrame(9);
 		}
 		else if (marco.direction == RIGHT) {
 			marco.jumpRight();
-			isFinished = marco.nextFrame(19);
+			isFinished = marco.nextFrame(9);
 		}
 
-		if (isFinished) 
-		{
+		if (isFinished) {
 			//puts("Jump up finish");
 			marco.state = State::FALL;
 			marco.initSpriteIndex();
@@ -390,44 +497,97 @@ void My_Display() {
 			marco.state = State::JUMP;
 	}
 
-	else if (marco.state == State::FALL) 
-	{
-		// Rekkursion
-		//timerSpeed = 20;
-		timerSpeed = 45;
-
+	// Fall
+	else if (marco.state == State::FALL) {
 		if (marco.direction == LEFT) {
 			marco.fallLeft();
-			isFinished = marco.nextFrame(19);
+			isFinished = marco.nextFrame(9);
 		}
 		else if (marco.direction == RIGHT) {
 			marco.fallRight();
-			isFinished = marco.nextFrame(19);
+			isFinished = marco.nextFrame(9);
+		}
+
+		if (isFinished) {
+			marco.state = State::STOP;
+			marco.initSpriteIndex();
+		}
+		else {
+			marco.state = State::FALL;
+		}
+	}
+
+	// Stop
+	else if (marco.state == State::STOP) {
+		if (marco.direction == LEFT) {
+			marco.stopLeft();
+			isFinished = marco.nextFrame(8);
+		}
+		else if (marco.direction == RIGHT) {
+			marco.stopRight();
+			isFinished = marco.nextFrame(8);
+		}
+		if (isFinished) {
+			marco.state = State::IDLE;
+			marco.initSpriteIndex();
+		}
+	}
+
+	// Knife attack
+	if (marco.state == State::KNIFE) {
+		if (marco.direction == LEFT) {
+			marco.knifeLeft();
+			isFinished = marco.nextFrame(8);
+		}
+		else if (marco.direction == RIGHT) {
+			marco.knifeRight();
+			isFinished = marco.nextFrame(8);
 		}
 
 		if (isFinished) {
 			marco.state = State::IDLE;
 			marco.initSpriteIndex();
 		}
-		else
-		{
-			marco.state = State::FALL;
+	}
+
+	// Gun attack
+	if (marco.state == State::GUN) {
+		if (marco.direction == LEFT) {
+			marco.shootLeft();
+			isFinished = marco.nextFrame(12);
+		}
+		else if (marco.direction == RIGHT) {
+			marco.shootRight();
+			isFinished = marco.nextFrame(12);
+		}
+		if (isFinished) {
+			marco.state = State::IDLE;
+			marco.initSpriteIndex();
+		}
+	}
+
+	// Grenade attack
+	if (marco.state == State::GRENADE) {
+		if (marco.direction == LEFT) {
+			marco.grenadeLeft();
+			isFinished = marco.nextFrame(7);
+		}
+		else if (marco.direction == RIGHT) {
+			marco.grenadeRight();
+			isFinished = marco.nextFrame(7);
+		}
+		if (isFinished) {
+			marco.state = State::IDLE;
+			marco.initSpriteIndex();
 		}
 	}
 
 	// =================================================
 
-	// Rekkursion
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glClearColor(1.0f, 0.0f, 0.0f, 1.0f);
-
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, texture4fbo);
-	glBindVertexArray(fboVAO);
-	glUseProgram(fboProgram);
-	glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+	#ifdef CGI
+	fboManager->disable();
+	fboManager->effectRender();
+	#endif // CGI
 
 	glutSwapBuffers();
 	return;
@@ -439,22 +599,31 @@ void My_Reshape(int width, int height)
 	aspect = width * 1.0f / height;
 	glViewport(0, 0, width, height);
 
-	// Rekkursion
 	float viewportAspect = (float)width / (float)height;
 	proj_matrix = glm::perspective(80.0f, viewportAspect, -100.0f, 100.0f);
 
-	// Rekkursion
 	windowWidth = width;
 	windowHeight = height;
 
-	// Rekkursion
-	createRenderbufferAndTexture4Framebuffer();
+	#ifdef CGI
+	fboManager->setWindowData(windowWidth, windowHeight);
+	fboManager->createRenderbufferAndTexture4Framebuffer();
+	#endif // CGI
 }
 
 unsigned char lastKey = 0;
 // Normal keyboard key press down
 void My_KeyboardDown(unsigned char key, int x, int y) {
+
 	if (key == lastKey && lastKey == ' ') {
+		marco.setKeyboard(key, false);
+		return;
+	}
+	else if (key == lastKey && (lastKey == 'z' || lastKey == 'Z')) {
+		marco.setKeyboard(key, false);
+		return;
+	}
+	else if (key == lastKey && (lastKey == 'x' || lastKey == 'X')) {
 		marco.setKeyboard(key, false);
 		return;
 	}
@@ -468,44 +637,76 @@ void My_KeyboardDown(unsigned char key, int x, int y) {
 				marco.initSpriteIndex();
 			}
 			break;
+		case 'z':
+		case 'Z':
+			if (marco.state == State::IDLE || marco.state == State::WALK) {
+				//puts("Gun or Knife");
+				marco.setKeyboard(key, true);
+				//marco.state = State::KNIFE;
+				marco.state = State::GUN;
+				marco.initSpriteIndex();
+			}
+			else if (marco.state == State::IDLEUP) {
+				puts("Gun up");
+				marco.setKeyboard(key, true);
+				marco.state = State::GUNUP;
+				marco.initSpriteIndex();
+			}
+			break;
+		case 'x':
+		case 'X':
+			if (marco.state == State::IDLE || marco.state == State::WALK) {
+				puts("Grenade");
+				marco.setKeyboard(key, true);
+				marco.state = State::GRENADE;
+				marco.initSpriteIndex();
+			}
+			break;
 	}
 
 	lastKey = key;
 }
 
 // Normal keyboard key hop up
-void My_KeyboardUp(unsigned char key, int x, int y)
-{
+void My_KeyboardUp(unsigned char key, int x, int y) {
 	switch (key) {
 		case ' ':
 			marco.setKeyboard(key, false);
 			lastKey = 0;
-			//marco.setKeyboard(key, (marco.state != State::JUMP));
-			//marco.state = State::IDLE;
+			break;
+		case 'z':
+		case 'Z':
+			cout << "Attack finish" << endl;
+			marco.setKeyboard(key, false);
+			lastKey = 0;
+			break;
+		case 'x':
+		case 'X':
+			marco.setKeyboard(key, false);
+			lastKey = 0;
 			break;
 	}
 }
 
 // Special keyboard key press down
-void My_SpecialKeyDown(int key, int x, int y)
-{
-	switch (key)
-	{
-	case GLUT_KEY_LEFT:
-		marco.setKeyboard(key, true);
-		break;
-	case GLUT_KEY_RIGHT:
-		marco.setKeyboard(key, true);
-		break;
-	case GLUT_KEY_UP:
-		marco.setKeyboard(key, true);
-		break;
+void My_SpecialKeyDown(int key, int x, int y) {
+	switch (key) {
+		case GLUT_KEY_LEFT:
+			marco.setKeyboard(key, true);
+			break;
+		case GLUT_KEY_RIGHT:
+			marco.setKeyboard(key, true);
+			break;
+		case GLUT_KEY_UP:
+			if (displayMode == DisplayMode::NORMAL) {
+				marco.setKeyboard(key, true);
+			}
+			break;
 	}
 }
 
 // Special keyboard key hop up
-void My_SpecialKeyUp(int key, int x, int y) 
-{
+void My_SpecialKeyUp(int key, int x, int y) {
 	switch (key) {
 		case GLUT_KEY_LEFT:
 			marco.setKeyboard(key, false);
@@ -514,126 +715,119 @@ void My_SpecialKeyUp(int key, int x, int y)
 			marco.setKeyboard(key, false);
 			break;
 		case GLUT_KEY_UP:
-			marco.setKeyboard(key, false);
+			if (displayMode == DisplayMode::NORMAL) {
+				marco.setKeyboard(key, false);
+			}
+
+			#ifdef CGI
+			// increase stars num
+			else if (displayMode == DisplayMode::POINT_SPRITE_NUMBER) {
+
+				for (int k = 0; k < POINT_SPRITE_NUM; k++) {
+					pointSprite_snow_list[k].increaseStarsNum();
+					pointSprite_snow_list[k].pointSpriteInit("../shader/PointSprite/Point_Sprite.vs.glsl", "../shader/PointSprite/Point_Sprite.fs.glsl", (((k & 1) == 1) ? "../media/snow.png" : "../media/snowflake.png"), (float)k);
+				}
+			}
+
+			// increase speed
+			else if (displayMode == DisplayMode::POINT_SPRITE_SPEED) {
+				for (int k = 0; k < POINT_SPRITE_NUM; k++) {
+					pointSprite_snow_list[k].increaseStarsSpeed();
+				}
+			}
+
+			// increase angle (to left)
+			else if (displayMode == DisplayMode::POINT_SPRITE_DIRECTION) {
+				for (int k = 0; k < POINT_SPRITE_NUM; k++) {
+					pointSprite_snow_list[k].increaseStarsAngle();
+				}
+			}
+			#endif // CGI
+
+			break;
+		case GLUT_KEY_DOWN:
+			if (displayMode == DisplayMode::NORMAL) {}
+
+			#ifdef CGI
+			// decrease stars num
+			else if (displayMode == DisplayMode::POINT_SPRITE_NUMBER) {
+
+				for (int k = 0; k < POINT_SPRITE_NUM; k++) {
+					pointSprite_snow_list[k].decreaseStarsNum();
+					pointSprite_snow_list[k].pointSpriteInit("../shader/PointSprite/Point_Sprite.vs.glsl", "../shader/PointSprite/Point_Sprite.fs.glsl", (((k & 1) == 1) ? "../media/snow.png" : "../media/snowflake.png"), (float)k);
+				}
+			}
+
+			// decrease speed
+			else if (displayMode == DisplayMode::POINT_SPRITE_SPEED) {
+				for (int k = 0; k < POINT_SPRITE_NUM; k++) {
+					pointSprite_snow_list[k].decreaseStarsSpeed();
+				}
+			}
+
+			// decrease angle (to right)
+			else if (displayMode == DisplayMode::POINT_SPRITE_DIRECTION) {
+				for (int k = 0; k < POINT_SPRITE_NUM; k++) {
+					pointSprite_snow_list[k].decreaseStarsAngle();
+				}
+			}
+			#endif // CGI
+
+			break;
+
+		case GLUT_KEY_F1:
+			marco.reborn();
 			break;
 	}
 }
 
 // Timer function
-void My_Timer(int val)
-{
+void My_Timer(int val) {
 	glutPostRedisplay();
 	glutTimerFunc(timerSpeed, My_Timer, val);
 }
 
 // Mouse press function
-void My_Mouse(int button, int state, int x, int y)
-{
+void My_Mouse(int button, int state, int x, int y) {
 	//	m_camera.mouseEvents(button, state, x, y);
-	if (button == GLUT_LEFT_BUTTON)
-	{
-		if (state == GLUT_DOWN)
-		{
+	if (button == GLUT_LEFT_BUTTON) {
+		if (state == GLUT_DOWN) {
 			printf("Mouse %d is pressed at (%d, %d)\n", button, x, y);
 		}
-		else if (state == GLUT_UP)
-		{
+		else if (state == GLUT_UP) {
 			printf("Mouse %d is released at (%d, %d)\n", button, x, y);
 		}
 	}
-	else if (button == GLUT_RIGHT_BUTTON)
-	{
+	else if (button == GLUT_RIGHT_BUTTON) {
 		printf("Mouse %d is pressed\n", button);
 	}
 	printf("%d %d %d %d\n", button, state, x, y);
 }
 
 // Mouse moving function
-void My_Mouse_Moving(int x, int y) 
-{
+void My_Mouse_Moving(int x, int y) {
 	//m_camera.mouseMoveEvent(x, y);
 }
 
-#include "ShaderFunction.h"
-
-// Rekkursion
-void initFramebufferData(const char* vs, const char* fs) {
-	fboProgram = glCreateProgram();
-
-	GLuint vs2 = glCreateShader(GL_VERTEX_SHADER);
-	GLuint fs2 = glCreateShader(GL_FRAGMENT_SHADER);
-	char** vsSource2 = loadShaderSource(vs);
-	char** fsSource2 = loadShaderSource(fs);
-	glShaderSource(vs2, 1, vsSource2, NULL);
-	glShaderSource(fs2, 1, fsSource2, NULL);
-	freeShaderSource(vsSource2);
-	freeShaderSource(fsSource2);
-	glCompileShader(vs2);
-	glCompileShader(fs2);
-	shaderLog(vs2);
-	shaderLog(fs2);
-
-	//Attach Shader to program
-	glAttachShader(fboProgram, vs2);
-	glAttachShader(fboProgram, fs2);
-	glLinkProgram(fboProgram);
-
-	glGenVertexArrays(1, &fboVAO);
-	glBindVertexArray(fboVAO);
-
-	glGenBuffers(1, &fboVBO);
-	glBindBuffer(GL_ARRAY_BUFFER, fboVBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(window_positions), window_positions, GL_STATIC_DRAW);
-
-	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(GL_FLOAT) * 4, 0);
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(GL_FLOAT) * 4, (const GLvoid*)(sizeof(GL_FLOAT) * 2));
-
-	glEnableVertexAttribArray(0);
-	glEnableVertexAttribArray(1);
-
-	glGenFramebuffers(1, &fbo);
+void menuEvents(int option) {
+	switch (option) {
+		case 9999:
+			displayMode = DisplayMode::NORMAL;
+			break;
+		default:
+			displayMode = DisplayMode::NORMAL;
+			break;
+	}
 
 	return;
 }
 
-// Rekkursion
-void createRenderbufferAndTexture4Framebuffer() {
-
-	// delete old renderbuffer and texture
-	glDeleteRenderbuffers(1, &rbo);
-	glDeleteTextures(1, &texture4fbo);
-
-	// bind framebuffer
-	glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-
-	// gen texture
-	glGenTextures(1, &texture4fbo);
-	glBindTexture(GL_TEXTURE_2D, texture4fbo);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, windowWidth, windowHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glBindTexture(GL_TEXTURE_2D, 0);
-
-	// attach texture to framebuffer
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture4fbo, 0);
-
-	// gen renderbuffer
-	glGenRenderbuffers(1, &rbo);
-	glBindRenderbuffer(GL_RENDERBUFFER, rbo);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, windowWidth, windowHeight);
-	glBindRenderbuffer(GL_RENDERBUFFER, 0);
-
-	// attach renderbuffer to framebuffer
-	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
-
-	// check if framebuffer is completely created
-	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE)
-		puts("Create framebuffer successfully :)");
-	else
-		puts("Create framebuffer failed :(");
-
-	// unbind framebuffer
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+void fboParamMenuEvents(int option) {
+	switch (option) {
+		case 0: displayMode = DisplayMode::POINT_SPRITE_NUMBER; break;
+		case 1: displayMode = DisplayMode::POINT_SPRITE_SPEED; break;
+		case 2: displayMode = DisplayMode::POINT_SPRITE_DIRECTION; break;
+	}
 
 	return;
 }

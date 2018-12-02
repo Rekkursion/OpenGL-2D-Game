@@ -10,19 +10,24 @@ static char** loadShaderSource(const char* file)
 	FILE* fp = fopen(file, "rb");
 
 	if (!fp) {
-		puts("Good");
+		return NULL;
 	}
 
-	fseek(fp, 0, SEEK_END);
-	long sz = ftell(fp);
-	fseek(fp, 0, SEEK_SET);
-	char *src = new char[sz + 1];
-	fread(src, sizeof(char), sz, fp);
-	src[sz] = '\0';
-	char **srcp = new char*[1];
-	srcp[0] = src;
+	try {
+		fseek(fp, 0, SEEK_END);
+		long sz = ftell(fp);
+		fseek(fp, 0, SEEK_SET);
+		char *src = new char[sz + 1];
+		fread(src, sizeof(char), sz, fp);
+		src[sz] = '\0';
+		char **srcp = new char*[1];
+		srcp[0] = src;
 
-	return srcp;
+		return srcp;
+	}
+	catch (...) {}
+
+	return NULL;
 }
 
 //Release 2-dimension array

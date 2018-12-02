@@ -58,18 +58,12 @@ void Object::genVAO() {
 
 	glGenBuffers(1, &vbo);
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
-	//glBufferData(GL_ARRAY_BUFFER, sizeof(pos) + sizeof(frame), NULL, GL_DYNAMIC_DRAW);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(pos), NULL, GL_DYNAMIC_DRAW);
 
 	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(pos), &pos);
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, 0);
 	glVertexAttribDivisor(0, 1);
-
-	/*glBufferSubData(GL_ARRAY_BUFFER, sizeof(pos), sizeof(frame), frame);
-	glEnableVertexAttribArray(1);
-	glVertexAttribIPointer(1, 1, GL_INT, 0, (GLvoid*)(sizeof(pos)));
-	glVertexAttribDivisor(1, 1);*/
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindVertexArray(0);

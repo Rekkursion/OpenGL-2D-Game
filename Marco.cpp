@@ -1,8 +1,7 @@
 #pragma warning(disable:4996)
 #include "Marco.h"
 
-Marco::Marco()
-{
+Marco::Marco() {
 	for (int k = 0; k < MAX_KEY_NUM; k++)
 		keyboardState[k] = false;
 	spriteIdx = 0;
@@ -11,14 +10,14 @@ Marco::Marco()
 	direction = Direction::RIGHT;
 	pos = glm::vec2(INIT_LOC_X, INIT_LOC_Y);
 	moveSpeed.x = 0.025f;
-	moveSpeed.y = 0.025f;
+	moveSpeed.y = 0.1f;
 	canMove = true;
 	atCentre = false;
+
+	blinkingCounter = 0;
 }
 
-Marco::~Marco()
-{
-}
+Marco::~Marco() {}
 
 void Marco::setKeyboard(int key, bool state) {
 	keyboardState[key] = state;
@@ -27,19 +26,28 @@ void Marco::setKeyboard(int key, bool state) {
 bool Marco::getKeyboard(int key) {
 	if (key < 0)
 		key = 0;
-	
+
 	if (key >= MAX_KEY_NUM)
 		key = MAX_KEY_NUM - 1;
 
 	return keyboardState[key];
 }
 
+void Marco::reborn() {
+	state = State::IDLE;
+	direction = Direction::RIGHT;
+	pos = glm::vec2(0.0, INIT_LOC_Y);
+	blinkingCounter = 0;
+}
+
 void Marco::initSprite() {
+	blinkingLocation = glGetUniformLocation(program, "blinkingcounter");
+
 	// Initial LEFT
 	// Initial Left to Right
 	for (int i = 0; i < 4; i++) {
 		std::stringstream stream;
-		stream << "../media/Marco/Left/LtoR/" << (i + 1) << ".png";
+		stream << "../media/Marco/Left/LtoR/" << i << ".png";
 		std::string filename = "";
 		stream >> filename;
 		LtoRSprite[i].Init(filename, 0);
@@ -47,7 +55,7 @@ void Marco::initSprite() {
 	// Initial idle left
 	for (int i = 0; i < 1; i++) {
 		std::stringstream stream;
-		stream << "../media/Marco/Left/Idle/" << (i + 1) << ".png";
+		stream << "../media/Marco/Left/Idle/" << i << ".png";
 		std::string filename = "";
 		stream >> filename;
 		idleLeftSprite[i].Init(filename, 0);
@@ -55,7 +63,7 @@ void Marco::initSprite() {
 	// Initial stop left
 	for (int i = 0; i < 8; i++) {
 		std::stringstream stream;
-		stream << "../media/Marco/Left/Stop/" << (i + 1) << ".png";
+		stream << "../media/Marco/Left/Stop/" << i << ".png";
 		std::string filename = "";
 		stream >> filename;
 		stopLeftSprite[i].Init(filename, 0);
@@ -63,7 +71,7 @@ void Marco::initSprite() {
 	// Initial walk left
 	for (int i = 0; i < 13; i++) {
 		std::stringstream stream;
-		stream << "../media/Marco/Left/Walk/" << (i + 1) << ".png";
+		stream << "../media/Marco/Left/Walk/" << i << ".png";
 		std::string filename = "";
 		stream >> filename;
 		walkLeftSprite[i].Init(filename, 0);
@@ -71,7 +79,7 @@ void Marco::initSprite() {
 	// Initial up left
 	for (int i = 0; i < 5; i++) {
 		std::stringstream stream;
-		stream << "../media/Marco/Left/Up/" << (i + 1) << ".png";
+		stream << "../media/Marco/Left/Up/" << i << ".png";
 		std::string filename = "";
 		stream >> filename;
 		upLeftSprite[i].Init(filename, 0);
@@ -79,7 +87,7 @@ void Marco::initSprite() {
 	// Initial idle up left
 	for (int i = 0; i < 1; i++) {
 		std::stringstream stream;
-		stream << "../media/Marco/Left/IdleUp/" << (i + 1) << ".png";
+		stream << "../media/Marco/Left/IdleUp/" << i << ".png";
 		std::string filename = "";
 		stream >> filename;
 		idleUpLeftSprite[i].Init(filename, 0);
@@ -87,40 +95,64 @@ void Marco::initSprite() {
 	// Initial down left
 	for (int i = 0; i < 5; i++) {
 		std::stringstream stream;
-		stream << "../media/Marco/Left/Down/" << (i + 1) << ".png";
+		stream << "../media/Marco/Left/Down/" << i << ".png";
 		std::string filename = "";
 		stream >> filename;
 		downLeftSprite[i].Init(filename, 0);
 	}
 	// Initial jump left
-	for (int i = 0; i < 19; i++) 
-	{
+	for (int i = 0; i < 9; i++) {
 		std::stringstream stream;
-		if (i < 10)
-			stream << "../media/Marco/Left/Jump/" << 0 << ".png";
-		else
-			stream << "../media/Marco/Left/Jump/" << i % 10 << ".png";
+		stream << "../media/Marco/Left/Jump/" << i << ".png";
 		std::string filename = "";
 		stream >> filename;
 		jumpLeftSprite[i].Init(filename, 0);
 	}
 	// Initial fall left
-	for (int i = 0; i < 19; i++)
-	{
+	for (int i = 0; i < 9; i++) {
 		std::stringstream stream;
-		if (i < 9)
-			stream << "../media/Marco/Left/Fall/" << i << ".png";
-		else
-			stream << "../media/Marco/Left/Fall/" << 8 << ".png";
+		stream << "../media/Marco/Left/Fall/" << i << ".png";
 		std::string filename = "";
 		stream >> filename;
 		fallLeftSprite[i].Init(filename, 0);
+	}
+	// Initial knife left
+	for (int i = 0; i < 8; i++) {
+		std::stringstream stream;
+		stream << "../media/Marco/Left/Knife/" << i << ".png";
+		std::string filename = "";
+		stream >> filename;
+		knifeLeftSprite[i].Init(filename, 0);
+	}
+	// Initial gun left
+	for (int i = 0; i < 12; i++) {
+		std::stringstream stream;
+		stream << "../media/Marco/Left/Shoot/" << i << ".png";
+		std::string filename = "";
+		stream >> filename;
+		shootLeftSprite[i].Init(filename, 0);
+	}
+	// Initial gun up left
+	for (int i = 0; i < 12; i++) {
+		std::stringstream stream;
+		stream << "../media/Marco/Left/UpShoot/" << i << ".png";
+		std::string filename = "";
+		stream >> filename;
+		shootUpLeftSprite[i].Init(filename, 0);
+	}
+	// Initial grenade left
+	for (int i = 0; i < 7; i++) {
+		std::stringstream stream;
+		stream << "../media/Marco/Left/Grenade/" << i << ".png";
+		std::string filename = "";
+		stream >> filename;
+		grenadeLeftSprite[i].Init(filename, 0);
 	}
 	// Initial RIGHT
 	// Initial Right to Left
 	for (int i = 0; i < 4; i++) {
 		std::stringstream stream;
-		stream << "../media/Marco/Right/RtoL/" << (i + 1) << ".png";
+		stream << "../media/Marco/Right/RtoL/" << i << ".png";
 		std::string filename = "";
 		stream >> filename;
 		RtoLSprite[i].Init(filename, 0);
@@ -128,7 +160,7 @@ void Marco::initSprite() {
 	// Initial idle right
 	for (int i = 0; i < 1; i++) {
 		std::stringstream stream;
-		stream << "../media/Marco/Right/Idle/" << (i + 1) << ".png";
+		stream << "../media/Marco/Right/Idle/" << i << ".png";
 		std::string filename = "";
 		stream >> filename;
 		idleRightSprite[i].Init(filename, 0);
@@ -136,7 +168,7 @@ void Marco::initSprite() {
 	// Initial stop right
 	for (int i = 0; i < 8; i++) {
 		std::stringstream stream;
-		stream << "../media/Marco/Right/Stop/" << (i + 1) << ".png";
+		stream << "../media/Marco/Right/Stop/" << i << ".png";
 		std::string filename = "";
 		stream >> filename;
 		stopRightSprite[i].Init(filename, 0);
@@ -144,7 +176,7 @@ void Marco::initSprite() {
 	// Initial walk right
 	for (int i = 0; i < 13; i++) {
 		std::stringstream stream;
-		stream << "../media/Marco/Right/Walk/" << (i + 1) << ".png";
+		stream << "../media/Marco/Right/Walk/" << i << ".png";
 		std::string filename = "";
 		stream >> filename;
 		walkRightSprite[i].Init(filename, 0);
@@ -152,7 +184,7 @@ void Marco::initSprite() {
 	// Initial up right
 	for (int i = 0; i < 5; i++) {
 		std::stringstream stream;
-		stream << "../media/Marco/Right/Up/" << (i + 1) << ".png";
+		stream << "../media/Marco/Right/Up/" << i << ".png";
 		std::string filename = "";
 		stream >> filename;
 		upRightSprite[i].Init(filename, 0);
@@ -160,7 +192,7 @@ void Marco::initSprite() {
 	// Initial idle up right
 	for (int i = 0; i < 1; i++) {
 		std::stringstream stream;
-		stream << "../media/Marco/Right/IdleUp/" << (i + 1) << ".png";
+		stream << "../media/Marco/Right/IdleUp/" << i << ".png";
 		std::string filename = "";
 		stream >> filename;
 		idleUpRightSprite[i].Init(filename, 0);
@@ -168,32 +200,58 @@ void Marco::initSprite() {
 	// Initial down right
 	for (int i = 0; i < 5; i++) {
 		std::stringstream stream;
-		stream << "../media/Marco/Right/Down/" << (i + 1) << ".png";
+		stream << "../media/Marco/Right/Down/" << i << ".png";
 		std::string filename = "";
 		stream >> filename;
 		downRightSprite[i].Init(filename, 0);
 	}
 	// Initial jump right
-	for (int i = 0; i < 19; i++) {
+	for (int i = 0; i < 9; i++) {
 		std::stringstream stream;
-		if (i < 10)
-			stream << "../media/Marco/Right/Jump/" << 0 << ".png";
-		else
-			stream << "../media/Marco/Right/Jump/" << i % 10 << ".png";
+		stream << "../media/Marco/Right/Jump/" << i << ".png";
 		std::string filename = "";
 		stream >> filename;
 		jumpRightSprite[i].Init(filename, 0);
 	}
 	// Initial fall right
-	for (int i = 0; i < 19; i++) {
+	for (int i = 0; i < 9; i++) {
 		std::stringstream stream;
-		if (i < 9)
-			stream << "../media/Marco/Right/Fall/" << i << ".png";
-		else
-			stream << "../media/Marco/Right/Fall/" << 8 << ".png";
+		stream << "../media/Marco/Right/Fall/" << i << ".png";
 		std::string filename = "";
 		stream >> filename;
 		fallRightSprite[i].Init(filename, 0);
+	}
+	// Initial knife right
+	for (int i = 0; i < 8; i++) {
+		std::stringstream stream;
+		stream << "../media/Marco/Right/Knife/" << i << ".png";
+		std::string filename = "";
+		stream >> filename;
+		knifeRightSprite[i].Init(filename, 0);
+	}
+	// Initial gun right
+	for (int i = 0; i < 12; i++) {
+		std::stringstream stream;
+		stream << "../media/Marco/Right/Shoot/" << i << ".png";
+		std::string filename = "";
+		stream >> filename;
+		shootRightSprite[i].Init(filename, 0);
+	}
+	// Initial gun up right
+	for (int i = 0; i < 12; i++) {
+		std::stringstream stream;
+		stream << "../media/Marco/Right/UpShoot/" << i << ".png";
+		std::string filename = "";
+		stream >> filename;
+		shootUpRightSprite[i].Init(filename, 0);
+	}
+	// Initial grenade right
+	for (int i = 0; i < 7; i++) {
+		std::stringstream stream;
+		stream << "../media/Marco/Right/Grenade/" << i << ".png";
+		std::string filename = "";
+		stream >> filename;
+		grenadeRightSprite[i].Init(filename, 0);
 	}
 }
 
@@ -214,6 +272,7 @@ void Marco::LtoR() {
 	idleLeftSprite[spriteIdx].Enable();
 	glUniformMatrix4fv(uniforms.mv_matrix, 1, GL_FALSE, &(view * model)[0][0]);
 	glUniformMatrix4fv(uniforms.proj_matrix, 1, GL_FALSE, &(projection)[0][0]);
+	glUniform1f(blinkingLocation, (float)blinkingCounter);
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 	idleLeftSprite[spriteIdx].Disable();
 
@@ -235,6 +294,7 @@ void Marco::idleLeft() {
 	idleLeftSprite[spriteIdx].Enable();
 	glUniformMatrix4fv(uniforms.mv_matrix, 1, GL_FALSE, &(view * model)[0][0]);
 	glUniformMatrix4fv(uniforms.proj_matrix, 1, GL_FALSE, &(projection)[0][0]);
+	glUniform1f(blinkingLocation, (float)blinkingCounter);
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 	idleLeftSprite[spriteIdx].Disable();
 
@@ -256,6 +316,7 @@ void Marco::stopLeft() {
 	stopLeftSprite[spriteIdx].Enable();
 	glUniformMatrix4fv(uniforms.mv_matrix, 1, GL_FALSE, &(view * model)[0][0]);
 	glUniformMatrix4fv(uniforms.proj_matrix, 1, GL_FALSE, &(projection)[0][0]);
+	glUniform1f(blinkingLocation, (float)blinkingCounter);
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 	stopLeftSprite[spriteIdx].Disable();
 
@@ -289,6 +350,7 @@ void Marco::walkLeft() {
 	walkLeftSprite[spriteIdx].Enable();
 	glUniformMatrix4fv(uniforms.mv_matrix, 1, GL_FALSE, &(view * model)[0][0]);
 	glUniformMatrix4fv(uniforms.proj_matrix, 1, GL_FALSE, &(projection)[0][0]);
+	glUniform1f(blinkingLocation, (float)blinkingCounter);
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 	walkLeftSprite[spriteIdx].Disable();
 
@@ -310,6 +372,7 @@ void Marco::upLeft() {
 	upLeftSprite[spriteIdx].Enable();
 	glUniformMatrix4fv(uniforms.mv_matrix, 1, GL_FALSE, &(view * model)[0][0]);
 	glUniformMatrix4fv(uniforms.proj_matrix, 1, GL_FALSE, &(projection)[0][0]);
+	glUniform1f(blinkingLocation, (float)blinkingCounter);
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 	upLeftSprite[spriteIdx].Disable();
 
@@ -331,6 +394,7 @@ void Marco::idleUpLeft() {
 	idleUpLeftSprite[spriteIdx].Enable();
 	glUniformMatrix4fv(uniforms.mv_matrix, 1, GL_FALSE, &(view * model)[0][0]);
 	glUniformMatrix4fv(uniforms.proj_matrix, 1, GL_FALSE, &(projection)[0][0]);
+	glUniform1f(blinkingLocation, (float)blinkingCounter);
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 	idleUpLeftSprite[spriteIdx].Disable();
 
@@ -352,6 +416,7 @@ void Marco::downLeft() {
 	downLeftSprite[spriteIdx].Enable();
 	glUniformMatrix4fv(uniforms.mv_matrix, 1, GL_FALSE, &(view * model)[0][0]);
 	glUniformMatrix4fv(uniforms.proj_matrix, 1, GL_FALSE, &(projection)[0][0]);
+	glUniform1f(blinkingLocation, (float)blinkingCounter);
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 	downLeftSprite[spriteIdx].Disable();
 
@@ -360,7 +425,8 @@ void Marco::downLeft() {
 }
 // Jump Left
 void Marco::jumpLeft() {
-	pos.y += moveSpeed.y;
+	if (spriteIdx < 5)
+		pos.y += moveSpeed.y;
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(pos), &pos);
 	//glBufferSubData(GL_ARRAY_BUFFER, sizeof(pos), sizeof(GL_INT) * objectCount, frame);
@@ -374,6 +440,7 @@ void Marco::jumpLeft() {
 	jumpLeftSprite[spriteIdx].Enable();
 	glUniformMatrix4fv(uniforms.mv_matrix, 1, GL_FALSE, &(view * model)[0][0]);
 	glUniformMatrix4fv(uniforms.proj_matrix, 1, GL_FALSE, &(projection)[0][0]);
+	glUniform1f(blinkingLocation, (float)blinkingCounter);
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 	jumpLeftSprite[spriteIdx].Disable();
 
@@ -381,9 +448,9 @@ void Marco::jumpLeft() {
 	glUseProgram(0);
 }
 // Fall Left
-void Marco::fallLeft()
-{
-	pos.y -= moveSpeed.y;
+void Marco::fallLeft() {
+	if (spriteIdx > 3)
+		pos.y -= moveSpeed.y;
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(pos), &pos);
 	//glBufferSubData(GL_ARRAY_BUFFER, sizeof(pos), sizeof(GL_INT) * objectCount, frame);
@@ -397,8 +464,97 @@ void Marco::fallLeft()
 	fallLeftSprite[spriteIdx].Enable();
 	glUniformMatrix4fv(uniforms.mv_matrix, 1, GL_FALSE, &(view * model)[0][0]);
 	glUniformMatrix4fv(uniforms.proj_matrix, 1, GL_FALSE, &(projection)[0][0]);
+	glUniform1f(blinkingLocation, (float)blinkingCounter);
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 	fallLeftSprite[spriteIdx].Disable();
+
+	glBindVertexArray(0);
+	glUseProgram(0);
+}
+// Knife Left
+void Marco::knifeLeft() {
+	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(pos), &pos);
+	//glBufferSubData(GL_ARRAY_BUFFER, sizeof(pos), sizeof(GL_INT) * objectCount, frame);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	//Update shaders' input variable
+	glUseProgram(program);
+
+	glBindVertexArray(vao);
+
+	knifeLeftSprite[spriteIdx].Enable();
+	glUniformMatrix4fv(uniforms.mv_matrix, 1, GL_FALSE, &(view * model)[0][0]);
+	glUniformMatrix4fv(uniforms.proj_matrix, 1, GL_FALSE, &(projection)[0][0]);
+	glUniform1f(blinkingLocation, (float)blinkingCounter);
+	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+	knifeLeftSprite[spriteIdx].Disable();
+
+	glBindVertexArray(0);
+	glUseProgram(0);
+}
+// Gun Left
+void Marco::shootLeft() {
+	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(pos), &pos);
+	//glBufferSubData(GL_ARRAY_BUFFER, sizeof(pos), sizeof(GL_INT) * objectCount, frame);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	//Update shaders' input variable
+	glUseProgram(program);
+
+	glBindVertexArray(vao);
+
+	shootLeftSprite[spriteIdx].Enable();
+	glUniformMatrix4fv(uniforms.mv_matrix, 1, GL_FALSE, &(view * model)[0][0]);
+	glUniformMatrix4fv(uniforms.proj_matrix, 1, GL_FALSE, &(projection)[0][0]);
+	glUniform1f(blinkingLocation, (float)blinkingCounter);
+	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+	shootLeftSprite[spriteIdx].Disable();
+
+	glBindVertexArray(0);
+	glUseProgram(0);
+}
+// Gun Up Left
+void Marco::shootUpLeft() {
+	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(pos), &pos);
+	//glBufferSubData(GL_ARRAY_BUFFER, sizeof(pos), sizeof(GL_INT) * objectCount, frame);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	//Update shaders' input variable
+	glUseProgram(program);
+
+	glBindVertexArray(vao);
+
+	shootUpLeftSprite[spriteIdx].Enable();
+	glUniformMatrix4fv(uniforms.mv_matrix, 1, GL_FALSE, &(view * model)[0][0]);
+	glUniformMatrix4fv(uniforms.proj_matrix, 1, GL_FALSE, &(projection)[0][0]);
+	glUniform1f(blinkingLocation, (float)blinkingCounter);
+	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+	shootUpLeftSprite[spriteIdx].Disable();
+
+	glBindVertexArray(0);
+	glUseProgram(0);
+}
+// Grenade Left
+void Marco::grenadeLeft() {
+	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(pos), &pos);
+	//glBufferSubData(GL_ARRAY_BUFFER, sizeof(pos), sizeof(GL_INT) * objectCount, frame);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	//Update shaders' input variable
+	glUseProgram(program);
+
+	glBindVertexArray(vao);
+
+	grenadeLeftSprite[spriteIdx].Enable();
+	glUniformMatrix4fv(uniforms.mv_matrix, 1, GL_FALSE, &(view * model)[0][0]);
+	glUniformMatrix4fv(uniforms.proj_matrix, 1, GL_FALSE, &(projection)[0][0]);
+	glUniform1f(blinkingLocation, (float)blinkingCounter);
+	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+	grenadeLeftSprite[spriteIdx].Disable();
 
 	glBindVertexArray(0);
 	glUseProgram(0);
@@ -420,6 +576,7 @@ void Marco::RtoL() {
 	idleLeftSprite[spriteIdx].Enable();
 	glUniformMatrix4fv(uniforms.mv_matrix, 1, GL_FALSE, &(view * model)[0][0]);
 	glUniformMatrix4fv(uniforms.proj_matrix, 1, GL_FALSE, &(projection)[0][0]);
+	glUniform1f(blinkingLocation, (float)blinkingCounter);
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 	idleLeftSprite[spriteIdx].Disable();
 
@@ -441,6 +598,7 @@ void Marco::idleRight() {
 	idleRightSprite[spriteIdx].Enable();
 	glUniformMatrix4fv(uniforms.mv_matrix, 1, GL_FALSE, &(view * model)[0][0]);
 	glUniformMatrix4fv(uniforms.proj_matrix, 1, GL_FALSE, &(projection)[0][0]);
+	glUniform1f(blinkingLocation, (float)blinkingCounter);
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 	idleRightSprite[spriteIdx].Disable();
 
@@ -462,6 +620,7 @@ void Marco::stopRight() {
 	stopRightSprite[spriteIdx].Enable();
 	glUniformMatrix4fv(uniforms.mv_matrix, 1, GL_FALSE, &(view * model)[0][0]);
 	glUniformMatrix4fv(uniforms.proj_matrix, 1, GL_FALSE, &(projection)[0][0]);
+	glUniform1f(blinkingLocation, (float)blinkingCounter);
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 	stopRightSprite[spriteIdx].Disable();
 
@@ -497,6 +656,7 @@ void Marco::walkRight() {
 	walkRightSprite[spriteIdx].Enable();
 	glUniformMatrix4fv(uniforms.mv_matrix, 1, GL_FALSE, &(view * model)[0][0]);
 	glUniformMatrix4fv(uniforms.proj_matrix, 1, GL_FALSE, &(projection)[0][0]);
+	glUniform1f(blinkingLocation, (float)blinkingCounter);
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 	walkRightSprite[spriteIdx].Disable();
 
@@ -518,6 +678,7 @@ void Marco::upRight() {
 	upRightSprite[spriteIdx].Enable();
 	glUniformMatrix4fv(uniforms.mv_matrix, 1, GL_FALSE, &(view * model)[0][0]);
 	glUniformMatrix4fv(uniforms.proj_matrix, 1, GL_FALSE, &(projection)[0][0]);
+	glUniform1f(blinkingLocation, (float)blinkingCounter);
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 	upRightSprite[spriteIdx].Disable();
 
@@ -539,6 +700,7 @@ void Marco::idleUpRight() {
 	idleUpRightSprite[spriteIdx].Enable();
 	glUniformMatrix4fv(uniforms.mv_matrix, 1, GL_FALSE, &(view * model)[0][0]);
 	glUniformMatrix4fv(uniforms.proj_matrix, 1, GL_FALSE, &(projection)[0][0]);
+	glUniform1f(blinkingLocation, (float)blinkingCounter);
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 	idleUpRightSprite[spriteIdx].Disable();
 
@@ -560,6 +722,7 @@ void Marco::downRight() {
 	downRightSprite[spriteIdx].Enable();
 	glUniformMatrix4fv(uniforms.mv_matrix, 1, GL_FALSE, &(view * model)[0][0]);
 	glUniformMatrix4fv(uniforms.proj_matrix, 1, GL_FALSE, &(projection)[0][0]);
+	glUniform1f(blinkingLocation, (float)blinkingCounter);
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 	downRightSprite[spriteIdx].Disable();
 
@@ -568,7 +731,8 @@ void Marco::downRight() {
 }
 // Jump Right
 void Marco::jumpRight() {
-	pos.y += moveSpeed.y;
+	if (spriteIdx < 5)
+		pos.y += moveSpeed.y;
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(pos), &pos);
 	//glBufferSubData(GL_ARRAY_BUFFER, sizeof(pos), sizeof(GL_INT) * objectCount, frame);
@@ -582,6 +746,7 @@ void Marco::jumpRight() {
 	jumpRightSprite[spriteIdx].Enable();
 	glUniformMatrix4fv(uniforms.mv_matrix, 1, GL_FALSE, &(view * model)[0][0]);
 	glUniformMatrix4fv(uniforms.proj_matrix, 1, GL_FALSE, &(projection)[0][0]);
+	glUniform1f(blinkingLocation, (float)blinkingCounter);
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 	jumpRightSprite[spriteIdx].Disable();
 
@@ -590,7 +755,8 @@ void Marco::jumpRight() {
 }
 // Jump Right
 void Marco::fallRight() {
-	pos.y -= moveSpeed.y;
+	if (spriteIdx > 3)
+		pos.y -= moveSpeed.y;
 
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(pos), &pos);
@@ -605,8 +771,97 @@ void Marco::fallRight() {
 	fallRightSprite[spriteIdx].Enable();
 	glUniformMatrix4fv(uniforms.mv_matrix, 1, GL_FALSE, &(view * model)[0][0]);
 	glUniformMatrix4fv(uniforms.proj_matrix, 1, GL_FALSE, &(projection)[0][0]);
+	glUniform1f(blinkingLocation, (float)blinkingCounter);
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 	fallRightSprite[spriteIdx].Disable();
+
+	glBindVertexArray(0);
+	glUseProgram(0);
+}
+// Knife Left
+void Marco::knifeRight() {
+	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(pos), &pos);
+	//glBufferSubData(GL_ARRAY_BUFFER, sizeof(pos), sizeof(GL_INT) * objectCount, frame);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	//Update shaders' input variable
+	glUseProgram(program);
+
+	glBindVertexArray(vao);
+
+	knifeRightSprite[spriteIdx].Enable();
+	glUniformMatrix4fv(uniforms.mv_matrix, 1, GL_FALSE, &(view * model)[0][0]);
+	glUniformMatrix4fv(uniforms.proj_matrix, 1, GL_FALSE, &(projection)[0][0]);
+	glUniform1f(blinkingLocation, (float)blinkingCounter);
+	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+	knifeRightSprite[spriteIdx].Disable();
+
+	glBindVertexArray(0);
+	glUseProgram(0);
+}
+// Gun Right
+void Marco::shootRight() {
+	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(pos), &pos);
+	//glBufferSubData(GL_ARRAY_BUFFER, sizeof(pos), sizeof(GL_INT) * objectCount, frame);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	//Update shaders' input variable
+	glUseProgram(program);
+
+	glBindVertexArray(vao);
+
+	shootRightSprite[spriteIdx].Enable();
+	glUniformMatrix4fv(uniforms.mv_matrix, 1, GL_FALSE, &(view * model)[0][0]);
+	glUniformMatrix4fv(uniforms.proj_matrix, 1, GL_FALSE, &(projection)[0][0]);
+	glUniform1f(blinkingLocation, (float)blinkingCounter);
+	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+	shootRightSprite[spriteIdx].Disable();
+
+	glBindVertexArray(0);
+	glUseProgram(0);
+}
+// Gun Up Right
+void Marco::shootUpRight() {
+	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(pos), &pos);
+	//glBufferSubData(GL_ARRAY_BUFFER, sizeof(pos), sizeof(GL_INT) * objectCount, frame);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	//Update shaders' input variable
+	glUseProgram(program);
+
+	glBindVertexArray(vao);
+
+	shootUpRightSprite[spriteIdx].Enable();
+	glUniformMatrix4fv(uniforms.mv_matrix, 1, GL_FALSE, &(view * model)[0][0]);
+	glUniformMatrix4fv(uniforms.proj_matrix, 1, GL_FALSE, &(projection)[0][0]);
+	glUniform1f(blinkingLocation, (float)blinkingCounter);
+	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+	shootUpRightSprite[spriteIdx].Disable();
+
+	glBindVertexArray(0);
+	glUseProgram(0);
+}
+// Grenade Right
+void Marco::grenadeRight() {
+	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(pos), &pos);
+	//glBufferSubData(GL_ARRAY_BUFFER, sizeof(pos), sizeof(GL_INT) * objectCount, frame);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	//Update shaders' input variable
+	glUseProgram(program);
+
+	glBindVertexArray(vao);
+
+	grenadeRightSprite[spriteIdx].Enable();
+	glUniformMatrix4fv(uniforms.mv_matrix, 1, GL_FALSE, &(view * model)[0][0]);
+	glUniformMatrix4fv(uniforms.proj_matrix, 1, GL_FALSE, &(projection)[0][0]);
+	glUniform1f(blinkingLocation, (float)blinkingCounter);
+	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+	grenadeRightSprite[spriteIdx].Disable();
 
 	glBindVertexArray(0);
 	glUseProgram(0);

@@ -1,7 +1,7 @@
 #pragma once
 #include "Object.h"
 
-#define TEX_SIZE_WIDTH 0.925f
+#define TEX_SIZE_WIDTH			0.925f
 
 class Scene: public Object
 {
@@ -11,6 +11,7 @@ public:
 
 	void render(void);
 	void moveBG(bool);
+	float getPosX();
 
 	bool atHead;
 	bool atTail;

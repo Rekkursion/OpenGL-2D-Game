@@ -41,6 +41,10 @@ void Scene::render(void) {
 	glUseProgram(0);
 }
 
+float Scene::getPosX() {
+	return pos.x;
+}
+
 void Scene::moveBG(bool isPositive) {
 	if (isPositive && canMove) {
 		pos.x += moveSpeed.x;
