@@ -3,11 +3,13 @@
 #include <string>
 #include <iostream>
 
-#define MAX_KEY_NUM		256
-#define INIT_LOC_X		(-0.5f)
-#define INIT_LOC_Y		(-0.8f)
-#define TEX_SIZE_WIDTH	0.17f
-#define BLINK_TIME		70
+#define MAX_KEY_NUM			256
+#define INIT_LOC_X			(-0.5f)
+#define INIT_LOC_Y			(-0.8f)
+#define INIT_MAP_LOC_X		(0.01f)
+#define TEX_SIZE_WIDTH		(0.17f)
+#define BLINK_TIME			70
+#define KNIFE_ATTACK_GAP	(0.01f)
 
 static std::string stateSymbols[] = {
 	"Idle", "Walk", "Stop", "Jump", "Fall", "JumpForward", "Redirect", "Knife" ,"Gun", "Grenade", "Up", "GunUp" , "IdleUp"
@@ -30,6 +32,9 @@ public:
 	bool getKeyboard(int);
 
 	void reborn();
+
+	glm::vec2 getScreenPosition(void);
+	int getSpriteId(void);
 
 	// Left
 	void LtoR(void);
@@ -100,5 +105,7 @@ private:
 
 	bool keyboardState[MAX_KEY_NUM];
 	GLint blinkingLocation;
+
+	//float mapLocationX;
 };
 

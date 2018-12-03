@@ -13,6 +13,37 @@ Object::~Object()
 {
 }
 
+float Object::getMapLocationX(float sceneLocX) {
+	return ((((pos.x + 1.0f) / 2.0f) * 0.04731f) + sceneLocX - 0.022f);
+}
+
+glm::vec2 Object::getMapLocation(float sceneLocX, glm::vec2 cur) {
+	return glm::vec2((((cur.x + 1.0f) / 2.0f) * 0.04731f) + sceneLocX - 0.022f, cur.y);
+}
+
+glm::vec2 Object::getMapLocation(float sceneLocX) {
+	return glm::vec2((((pos.x + 1.0f) / 2.0f) * 0.04731f) + sceneLocX - 0.022f, pos.y);
+}
+
+void Object::setScreenPosX(float sceneLocX) {
+	// mapPosX: 窗口目前移動到的位置
+	// mapLocationX: 敵人在 map 中的位置
+
+	float dis_has_dir = mapLocationX - sceneLocX;
+	float dis = fabs(dis_has_dir);
+
+	if (dis < SCENE_WIDTH_IN_SCREEN) {
+		pos.x = (dis / SCENE_WIDTH_IN_SCREEN) * 1.2f;
+		if (dis_has_dir < 0)
+			pos.x *= -1;
+	}
+	else {
+		pos.x = -10.0f;
+	}
+
+	return;
+}
+
 void Object::initialize(const char* vertexShader, const char* fragmentShader)
 {
 	genProgram(vertexShader, fragmentShader);

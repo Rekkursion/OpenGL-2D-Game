@@ -33,27 +33,17 @@ Enemy::~Enemy()
 }
 
 void Enemy::setScreenPosX(float mapPosX) {
-	// mapPosX: 窗口目前移動到的位置
-	// mapLocationX: 敵人在 map 中的位置
+	Object::setScreenPosX(mapPosX);
 
 	float dis_has_dir = mapLocationX - mapPosX;
-	float dis = fabs(dis_has_dir);
-	
-	if (dis < SCENE_WIDTH_IN_SCREEN) {
-		pos.x = (dis / SCENE_WIDTH_IN_SCREEN) * 1.2f;
-		if (dis_has_dir < 0)
-			pos.x *= -1;
-	}
-	else {
-		pos.x = -10.0f;
-	}
-
 	if (dis_has_dir < 0)
 		side = Side::LSIDE;
 	else
 		side = Side::RSIDE;
+}
 
-	return;
+float Enemy::getMapLocationX() {
+	return mapLocationX;
 }
 
 // Initial Sprite

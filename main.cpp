@@ -3,15 +3,18 @@
 #include <cmath>
 #include <ctime>
 #include "Marco.h"
+#include "MarcoAttack.h"
 #include "Enemy.h"
 #include "Scene.h"
 #include "PointSprite.h"
 #include "FrameEffectManager.h"
+#include "NumberObject.h"
 
 using namespace glm;
 using namespace std;
 
 #define CGI
+#define MAX_TIME_DIGIT 4
 
 /*const int spriteCount = 3;
 const int objectCount = 30;*/
@@ -42,16 +45,19 @@ void My_KeyboardUp(unsigned char, int , int);
 void My_SpecialKeyDown(int, int, int);
 void My_SpecialKeyUp(int, int, int);
 void My_Timer(int);
+void My_Counter(int);
 void My_Mouse(int, int, int, int);
 void My_Mouse_Moving(int, int);
-void menuEvents(int option);
-void fboParamMenuEvents(int option);
+void menuEvents(int);
+void fboParamMenuEvents(int);
+void fboChoiceMenuEvents(int);
 
 enum DisplayMode { 
 	NORMAL,
 	POINT_SPRITE_NUMBER,
 	POINT_SPRITE_SPEED,
-	POINT_SPRITE_DIRECTION
+	POINT_SPRITE_DIRECTION,
+	ONE_ENEMY
 };
 DisplayMode displayMode = DisplayMode::NORMAL;
 
@@ -59,15 +65,31 @@ Marco marco;
 Scene scene;
 //Enemy enemy(Arms::PISTOL, Side::RSIDE, 0.0f, -0.8f);
 vector<Enemy> enemyList;
+NumberObject digitOne, digitTen;
+NumberObject timeDigits[MAX_TIME_DIGIT];
+
+vector<MarcoAttack> mAttack;
 
 #ifdef CGI
 PointSprite pointSprite_snow_list[POINT_SPRITE_NUM];
 FrameEffectManager* fboManager = FrameEffectManager::getInstance();
 #endif // CGI
 
+enum FBOChoice {
+	NONE = 0,
+	MORE_BLACK_WITH_FOG,
+	MORE_BLACK,
+	FOG,
+	MARCO_DEATH,
+	ENDING
+};
+
 int timerSpeed = 45;
 int windowWidth = 600;
 int windowHeight = 440;
+int remainEnemyNum;
+int currentTime;
+int fboChoice;
 
 int main(int argc, char *argv[])
 {
@@ -109,6 +131,7 @@ int main(int argc, char *argv[])
 	glutKeyboardFunc(My_KeyboardDown);
 	glutKeyboardUpFunc(My_KeyboardUp);
 	glutTimerFunc(16, My_Timer, 0);
+	glutTimerFunc(1000, My_Counter, 0);
 	glutMouseFunc(My_Mouse);
 	glutPassiveMotionFunc(My_Mouse_Moving);
 	glutMotionFunc(My_Mouse_Moving);
@@ -121,9 +144,20 @@ int main(int argc, char *argv[])
 	glutAddMenuEntry("Direction", 2);
 	glutAttachMenu(GLUT_RIGHT_BUTTON);
 
+	int fboChoiceMenu = glutCreateMenu(fboChoiceMenuEvents);
+	glutAddMenuEntry("None", FBOChoice::NONE);
+	glutAddMenuEntry("More black with fog", FBOChoice::MORE_BLACK_WITH_FOG);
+	glutAddMenuEntry("More black", FBOChoice::MORE_BLACK);
+	glutAddMenuEntry("Fog", FBOChoice::FOG);
+	glutAddMenuEntry("Marco Death", FBOChoice::MARCO_DEATH);
+	glutAddMenuEntry("Ending", FBOChoice::ENDING);
+
 	glutCreateMenu(menuEvents);
 	glutAddMenuEntry("Normal mode", 9999);
-	glutAddSubMenu("FBO effect parameters", fboParamMenu);
+	glutAddMenuEntry("One enemy", 9998);
+	glutAddSubMenu("Point sprite effect parameters", fboParamMenu);
+	glutAddSubMenu("Framebuffer object effects", fboChoiceMenu);
+
 	glutAttachMenu(GLUT_RIGHT_BUTTON);
 
 	// Enter main event loop.
@@ -165,6 +199,24 @@ void My_Init()
 		ene.setScreenPosX(scene.getPosX());
 		enemyList[k] = ene;
 	}
+	Enemy::enemyNum++;
+	remainEnemyNum = Enemy::enemyNum;
+
+	// Number objects
+	digitOne.setNumber(remainEnemyNum % 10);
+	digitOne.setLocation(glm::vec2(DIGIT_ONE_LOC_X, DIGIT_LOC_Y));
+	digitOne.initialize("../shader/NumberObject/vertex.vs.glsl", "../shader/NumberObject/fragment.fs.glsl");
+
+	digitTen.setNumber(remainEnemyNum / 10);
+	digitTen.setLocation(glm::vec2(DIGIT_TEN_LOC_X, DIGIT_LOC_Y));
+	digitTen.initialize("../shader/NumberObject/vertex.vs.glsl", "../shader/NumberObject/fragment.fs.glsl");
+
+	currentTime = 0;
+	for (int k = 0; k < MAX_TIME_DIGIT; k++) {
+		timeDigits[k].setNumber(0);
+		timeDigits[k].setLocation(glm::vec2((-0.9f) + ((float)k * 0.1f), DIGIT_LOC_Y));
+		timeDigits[k].initialize("../shader/NumberObject/vertex.vs.glsl", "../shader/NumberObject/fragment.fs.glsl");
+	}
 
 	#ifdef CGI
 	// Point Sprite - Snow
@@ -172,14 +224,17 @@ void My_Init()
 		pointSprite_snow_list[k].pointSpriteInit("../shader/PointSprite/Point_Sprite.vs.glsl", "../shader/PointSprite/Point_Sprite.fs.glsl", (((k & 1) == 1) ? "../media/snow.png" : "../media/snowflake.png"), (float)k);
 
 	// Framebuffer
-	fboManager->initFrameBufferData("../shader/FBO/gray.vs.glsl", "../shader/FBO/gray.fs.glsl");
+	fboChoice = 0;
+	fboManager->initFrameBufferData("../shader/FBO/moreblack_fog.vs.glsl", "../shader/FBO/moreblack_fog.fs.glsl");
 	#endif // CGI
 }
 // GLUT callback Functions
 // Display Function
 void My_Display() {
-	//std::cout << "State: " << stateSymbols[marco.state] << std::endl;
+	//std::cout << "state: " << stateSymbols[marco.state] << std::endl;
 	//std::cout << "display mode: " << displayMode << std::endl;
+	//std::cout << "marco map loc: " << marco.getMapLocationX(scene.getPosX()) << std::endl;
+	//std::cout << "scene loc: " << scene.getPosX() << std::endl;
 
 	if(marco.blinkingCounter >= 0)
 		marco.blinkingCounter++;
@@ -188,7 +243,8 @@ void My_Display() {
 		marco.blinkingCounter = -1;
 
 	#ifdef CGI
-	fboManager->enable();
+	if(fboChoice != FBOChoice::NONE)
+		fboManager->enable();
 	#endif // CGI
 
 	// =================================================
@@ -215,7 +271,7 @@ void My_Display() {
 	// =================================================
 
 	// Enemy render
-	for (int k = 0; k < enemyList.size(); k++) {
+	for (int k = 0; k < remainEnemyNum; k++) {
 		enemyList[k].setScreenPosX(scene.getPosX());
 
 		bool replay = false;
@@ -277,9 +333,65 @@ void My_Display() {
 	}
 
 	// =================================================
+	// Clash test
+
+
+	// =================================================
+
+	// MarcoAttack render
+	vector<int> killAttack;
+	//cout << mAttack.size() << endl;
+	for (int ma = 0; ma < mAttack.size(); ma++) {
+		if (mAttack[ma].action == FLY) {
+			if (mAttack[ma].attack == BULLET) {
+				if (mAttack[ma].orient == L) {
+					mAttack[ma].bulletFlyLeft(scene.getPosX());
+				}
+				else if (mAttack[ma].orient == R) {
+					mAttack[ma].bulletFlyRight(scene.getPosX());
+				}
+				else if (mAttack[ma].orient == U) {
+					mAttack[ma].bulletFlyUp(scene.getPosX());
+				}
+				mAttack[ma].nextFrame();
+			}
+			else if (mAttack[ma].attack == PINEAPPLE) {
+				if (mAttack[ma].orient == L) {
+					mAttack[ma].pineappleFlyLeft(scene.getPosX());
+				}
+				else if (mAttack[ma].orient == R) {
+					mAttack[ma].pineappleFlyRight(scene.getPosX());
+				}
+				mAttack[ma].nextFrame();
+			}
+		}
+		else if (mAttack[ma].action == EXPLODE) {
+			bool exploded = false;
+			if (mAttack[ma].attack == BULLET) {
+				mAttack[ma].bulletExplode(scene.getPosX());
+			}
+			else if (mAttack[ma].attack == PINEAPPLE) {
+				mAttack[ma].pineappleExplode(scene.getPosX());
+			}
+			exploded = mAttack[ma].nextFrame();
+			if (exploded == true) {
+				killAttack.push_back(ma);
+			}
+		}
+	}
+	// Kill finish attack
+	for (int kma = killAttack.size() - 1; kma >= 0; kma--) {
+		cout << "delete\n";
+		mAttack.erase(mAttack.begin() + killAttack[kma]);
+	}
+
+	// =================================================
 
 	// Marco Action
 	bool isFinished = false;
+
+	glm::vec2 currentPosition;
+	currentPosition = marco.getScreenPosition();
 
 	// Left
 	if (marco.getKeyboard(GLUT_KEY_LEFT)) {
@@ -408,6 +520,13 @@ void My_Display() {
 			else if (marco.direction == RIGHT) {
 				marco.shootUpRight();
 				isFinished = marco.nextFrame(12);
+			}
+			// Initial bullet up
+			if (marco.getSpriteId() == 3) {
+				MarcoAttack temp(MAttack::BULLET, Orientation::U, currentPosition.x, currentPosition.y, scene.getPosX());
+				temp.initialize("../shader/Attack/vertex.vs.glsl", "../shader/Attack/fragment.fs.glsl");
+				mAttack.push_back(temp);
+				mAttack.push_back(temp);
 			}
 			if (isFinished) {
 				marco.state = State::IDLEUP;
@@ -553,10 +672,24 @@ void My_Display() {
 	// Gun attack
 	if (marco.state == State::GUN) {
 		if (marco.direction == LEFT) {
+			// Initial bullet left
+			if (marco.getSpriteId() == 3) {
+				MarcoAttack temp(MAttack::BULLET, Orientation::L, currentPosition.x - 0.0724f, currentPosition.y + 0.2266, scene.getPosX());
+				temp.initialize("../shader/Attack/vertex.vs.glsl", "../shader/Attack/fragment.fs.glsl");
+				temp.initSpriteIndex();
+				mAttack.push_back(temp);
+			}
 			marco.shootLeft();
 			isFinished = marco.nextFrame(12);
 		}
 		else if (marco.direction == RIGHT) {
+			// Initial bullet right
+			if (marco.getSpriteId() == 3) {
+				MarcoAttack temp(MAttack::BULLET, Orientation::R, currentPosition.x + 0.0724, currentPosition.y + 0.2266, scene.getPosX());
+				temp.initialize("../shader/Attack/vertex.vs.glsl", "../shader/Attack/fragment.fs.glsl");
+				temp.initSpriteIndex();
+				mAttack.push_back(temp);
+			}
 			marco.shootRight();
 			isFinished = marco.nextFrame(12);
 		}
@@ -569,10 +702,24 @@ void My_Display() {
 	// Grenade attack
 	if (marco.state == State::GRENADE) {
 		if (marco.direction == LEFT) {
+			// Inital pineapple left
+			if (marco.getSpriteId() == 2) {
+				MarcoAttack temp(MAttack::PINEAPPLE, Orientation::L, currentPosition.x - 0.1382, currentPosition.y + 0.3812, scene.getPosX());
+				temp.initialize("../shader/Attack/vertex.vs.glsl", "../shader/Attack/fragment.fs.glsl");
+				temp.initSpriteIndex();
+				mAttack.push_back(temp);
+			}
 			marco.grenadeLeft();
 			isFinished = marco.nextFrame(7);
 		}
 		else if (marco.direction == RIGHT) {
+			if (marco.getSpriteId() == 2) {
+				// Inital pineapple right
+				MarcoAttack temp(MAttack::PINEAPPLE, Orientation::R, currentPosition.x + 0.1382, currentPosition.y + 0.3812, scene.getPosX());
+				temp.initialize("../shader/Attack/vertex.vs.glsl", "../shader/Attack/fragment.fs.glsl");
+				temp.initSpriteIndex();
+				mAttack.push_back(temp);
+			}
 			marco.grenadeRight();
 			isFinished = marco.nextFrame(7);
 		}
@@ -585,9 +732,23 @@ void My_Display() {
 	// =================================================
 
 	#ifdef CGI
-	fboManager->disable();
-	fboManager->effectRender();
+	if (fboChoice != FBOChoice::NONE) {
+		fboManager->disable();
+		fboManager->effectRender();
+	}
 	#endif // CGI
+
+	// =================================================
+
+	// Number render (number of remained enemies)
+	digitOne.setNumber(remainEnemyNum % 10);
+	digitOne.render();
+	digitTen.setNumber(remainEnemyNum / 10);
+	digitTen.render();
+	for (int k = MAX_TIME_DIGIT - 1, tmpTime = currentTime; k >= 0; k--, tmpTime /= 10) {
+		timeDigits[k].setNumber(tmpTime % 10);
+		timeDigits[k].render();
+	}
 
 	glutSwapBuffers();
 	return;
@@ -642,8 +803,19 @@ void My_KeyboardDown(unsigned char key, int x, int y) {
 			if (marco.state == State::IDLE || marco.state == State::WALK) {
 				//puts("Gun or Knife");
 				marco.setKeyboard(key, true);
-				//marco.state = State::KNIFE;
+
+				// to choose using gun or knife
 				marco.state = State::GUN;
+				for (int k = 0; k < enemyList.size(); k++) {
+					float gap = enemyList[k].getMapLocationX() - marco.getMapLocationX(scene.getPosX());
+
+					if ((marco.direction == Direction::RIGHT && gap >= 0.0f && fabs(gap) < KNIFE_ATTACK_GAP) || 
+						(marco.direction == Direction::LEFT && gap <= 0.0f && fabs(gap) < KNIFE_ATTACK_GAP)) {
+						marco.state = State::KNIFE;
+						break;
+					}
+				}
+
 				marco.initSpriteIndex();
 			}
 			else if (marco.state == State::IDLEUP) {
@@ -787,6 +959,34 @@ void My_Timer(int val) {
 	glutTimerFunc(timerSpeed, My_Timer, val);
 }
 
+void My_Counter(int val) {
+
+	// defeat all enemies
+	if (remainEnemyNum == 0) {
+		if (val == 0) {
+			fboChoice = FBOChoice::ENDING;
+			fboManager->initFrameBufferData("../shader/FBO/ending.vs.glsl", "../shader/FBO/ending.fs.glsl");
+			fboManager->createRenderbufferAndTexture4Framebuffer();
+		}
+
+		if (fboManager->isAnimationEnd()) {
+			for (int k = 0; k < MAX_TIME_DIGIT; k++)
+				timeDigits[k].setLocation(glm::vec2((-0.2f) + ((float)k * 0.1f), -0.125f));
+			digitOne.setLocation(glm::vec2(0.0f, -10.0f));
+			digitTen.setLocation(glm::vec2(0.0f, -10.0f));
+		}
+		else
+			glutTimerFunc(1000, My_Counter, 1);
+	}
+
+	else {
+		currentTime++;
+		glutTimerFunc(1000, My_Counter, 0);
+	}
+
+	return;
+}
+
 // Mouse press function
 void My_Mouse(int button, int state, int x, int y) {
 	//	m_camera.mouseEvents(button, state, x, y);
@@ -811,9 +1011,19 @@ void My_Mouse_Moving(int x, int y) {
 
 void menuEvents(int option) {
 	switch (option) {
+		// Normal mode
 		case 9999:
 			displayMode = DisplayMode::NORMAL;
+			remainEnemyNum = Enemy::enemyNum;
 			break;
+
+		// One enemy mode
+		case 9998:
+			displayMode = DisplayMode::ONE_ENEMY;
+			Enemy::enemyNum = remainEnemyNum;
+			remainEnemyNum = 1;
+			break;
+
 		default:
 			displayMode = DisplayMode::NORMAL;
 			break;
@@ -828,6 +1038,40 @@ void fboParamMenuEvents(int option) {
 		case 1: displayMode = DisplayMode::POINT_SPRITE_SPEED; break;
 		case 2: displayMode = DisplayMode::POINT_SPRITE_DIRECTION; break;
 	}
+
+	return;
+}
+
+void fboChoiceMenuEvents(int option) {
+	fboChoice = option;
+
+	switch (option) {
+		case FBOChoice::MORE_BLACK_WITH_FOG:
+			fboManager->initFrameBufferData("../shader/FBO/moreblack_fog.vs.glsl", "../shader/FBO/moreblack_fog.fs.glsl");
+			break;
+
+		case FBOChoice::MORE_BLACK:
+			fboManager->initFrameBufferData("../shader/FBO/moreblack.vs.glsl", "../shader/FBO/moreblack.fs.glsl");
+			break;
+
+		case FBOChoice::FOG:
+			fboManager->initFrameBufferData("../shader/FBO/fog.vs.glsl", "../shader/FBO/fog.fs.glsl");
+			break;
+
+		case FBOChoice::MARCO_DEATH:
+			fboManager->initFrameBufferData("../shader/FBO/gray.vs.glsl", "../shader/FBO/gray.fs.glsl");
+			break;
+
+		case FBOChoice::ENDING:
+			remainEnemyNum = 0;
+			fboManager->initFrameBufferData("../shader/FBO/ending.vs.glsl", "../shader/FBO/ending.fs.glsl");
+			break;
+
+		default:
+			fboManager->initFrameBufferData("../shader/FBO/moreblack_fog.vs.glsl", "../shader/FBO/moreblack_fog.fs.glsl");
+			break;
+	}
+	fboManager->createRenderbufferAndTexture4Framebuffer();
 
 	return;
 }

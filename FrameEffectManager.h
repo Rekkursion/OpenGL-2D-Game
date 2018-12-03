@@ -3,6 +3,7 @@
 #include "ShaderFunction.h"
 #include <GLM/glm/glm.hpp>
 #include <iostream>
+#define ENDING_PIVOT_DECREMENT 0.05
 
 static const GLfloat window_positions[] = {
 	 1.0f, -1.0f,  1.0f,  0.0f,
@@ -26,6 +27,7 @@ public:
 	void enable();
 	void disable();
 	void effectRender();
+	bool isAnimationEnd();
 
 private:
 	static FrameEffectManager* instance;
@@ -42,5 +44,7 @@ private:
 	GLuint fbo;
 	GLuint rbo;
 	GLuint texture;
+	GLint endingPivotLocation;
+	float endingPivot; // from 3.0 to 1.0
 };
 

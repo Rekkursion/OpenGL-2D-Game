@@ -2,7 +2,6 @@
 #include "Object.h"
 #include <string>
 #include <vector>
-#define SCENE_WIDTH_IN_SCREEN	0.04731f
 
 static std::string enemyType[] =
 {
@@ -24,9 +23,11 @@ enum Side
 
 // Range: 0.0 - 0.925
 static float mapLocationList[] = {
-	0.013, 0.105, 0.152, 0.382, 0.727, 0.255, 0.413, 0.436, 0.086, 0.835, 0.233,
-	0.274, 0.867, 0.177, 0.762, 0.754, 0.820, 0.299, 0.589, 0.762
+	0.013, 0.105, 0.152, 0.382, 0.727, 0.255, 0.413, 0.436, 0.086, 0.835,
+	0.233, 0.274, 0.867, 0.177, 0.762, 0.754, 0.820, 0.299, 0.589, 0.666
 };
+// sorted: 
+// 0.013, 0.086, 0.105, 0.152, 0.177, 0.233, 0.255, 0.274, 0.299, 0.382, 0.413, 0.436, 0.589, 0.666, 0.727, 0.754, 0.762, 0.820, 0.835, 0.867
 
 class Enemy : public Object {
 public:
@@ -38,8 +39,9 @@ public:
 
 	// Death
 	~Enemy();
-
+	
 	void setScreenPosX(float);
+	float getMapLocationX();
 
 	// Left
 	void dallyLeft(void);
@@ -59,8 +61,8 @@ public:
 	Side side;
 	float screenLocationX = 0.0;
 	float screenLocationY = 0.0;
-	float mapLocationX = 0.0;
-	float mapLocationY = 0.0;
+	//float mapLocationX = 0.0;
+	//float mapLocationY = 0.0;
 
 	int step = 0;
 private:

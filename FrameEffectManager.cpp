@@ -3,7 +3,9 @@
 FrameEffectManager* FrameEffectManager::instance = NULL;
 
 
-FrameEffectManager::FrameEffectManager(): windowWidth(600), windowHeight(440) {}
+FrameEffectManager::FrameEffectManager(): windowWidth(600), windowHeight(440) {
+	endingPivot = 3.0f;
+}
 
 FrameEffectManager::~FrameEffectManager() {}
 
@@ -13,6 +15,12 @@ void FrameEffectManager::setWindowData(int w, int h) {
 }
 
 void FrameEffectManager::initFrameBufferData(const char* vs, const char* fs) {
+	char** vsSource2 = loadShaderSource(vs);
+	char** fsSource2 = loadShaderSource(fs);
+
+	if (vsSource2 == NULL || fsSource2 == NULL)
+		return;
+
 	glDeleteFramebuffers(1, &fbo);
 	glDeleteProgram(program);
 
@@ -20,8 +28,6 @@ void FrameEffectManager::initFrameBufferData(const char* vs, const char* fs) {
 
 	GLuint vs2 = glCreateShader(GL_VERTEX_SHADER);
 	GLuint fs2 = glCreateShader(GL_FRAGMENT_SHADER);
-	char** vsSource2 = loadShaderSource(vs);
-	char** fsSource2 = loadShaderSource(fs);
 	glShaderSource(vs2, 1, vsSource2, NULL);
 	glShaderSource(fs2, 1, fsSource2, NULL);
 	freeShaderSource(vsSource2);
@@ -50,6 +56,9 @@ void FrameEffectManager::initFrameBufferData(const char* vs, const char* fs) {
 	glEnableVertexAttribArray(1);
 
 	glGenFramebuffers(1, &fbo);
+
+	endingPivotLocation = glGetUniformLocation(program, "pivot");
+	endingPivot = 3.0f;
 }
 
 void FrameEffectManager::createRenderbufferAndTexture4Framebuffer() {
@@ -102,9 +111,18 @@ void FrameEffectManager::disable() {
 }
 
 void FrameEffectManager::effectRender() {
+	endingPivot -= ENDING_PIVOT_DECREMENT;
+	if (endingPivot < 0.0f)
+		endingPivot = 0.0f;
+
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, texture);
 	glBindVertexArray(vao);
 	glUseProgram(program);
+	glUniform1f(endingPivotLocation, endingPivot);
 	glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+}
+
+bool FrameEffectManager::isAnimationEnd() {
+	return (endingPivot <= 0.0000000001);
 }

@@ -11,6 +11,7 @@ Marco::Marco() {
 	pos = glm::vec2(INIT_LOC_X, INIT_LOC_Y);
 	moveSpeed.x = 0.025f;
 	moveSpeed.y = 0.1f;
+	mapLocationX = INIT_MAP_LOC_X;
 	canMove = true;
 	atCentre = false;
 
@@ -38,6 +39,14 @@ void Marco::reborn() {
 	direction = Direction::RIGHT;
 	pos = glm::vec2(0.0, INIT_LOC_Y);
 	blinkingCounter = 0;
+}
+
+glm::vec2 Marco::getScreenPosition() {
+	return pos;
+}
+
+int Marco::getSpriteId() {
+	return spriteIdx;
 }
 
 void Marco::initSprite() {
@@ -336,6 +345,10 @@ void Marco::walkLeft() {
 		if (pos.x < -1.0 + (TEX_SIZE_WIDTH / 2.0f))
 			pos.x = -1.0 + (TEX_SIZE_WIDTH / 2.0f);
 	}
+
+	mapLocationX -= 0.0015f;
+	if (mapLocationX < 0.0f)
+		mapLocationX = 0.0f;
 
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(pos), &pos);
@@ -642,6 +655,10 @@ void Marco::walkRight() {
 		if (pos.x >= 1.0 - (TEX_SIZE_WIDTH / 2.0f))
 			pos.x = 1.0 - (TEX_SIZE_WIDTH / 2.0f);
 	}
+
+	mapLocationX += 0.0015f;
+	//if (mapLocationX < 0.0f)
+	//	mapLocationX = 0.0f;
 
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(pos), &pos);
