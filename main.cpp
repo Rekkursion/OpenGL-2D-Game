@@ -293,8 +293,10 @@ void My_Display() {
 			it_e->setScreenPosX(scene.getPosX());
 			bool replay = false;
 
-			if (fabs(it_e->getScreenPosX()) > 1.2)
+			if (fabs(it_e->getScreenPosX()) > 1.2) {
+				it_e->step = -1;
 				continue;
+			}
 
 			// killed
 			if (it_e->isDieing) {
@@ -314,17 +316,30 @@ void My_Display() {
 				if (isAnimationEnd) {
 					remainEnemyNum--;
 					enemyList.erase(it_e);
-
 					break;
 				}
-
 				continue;
 			}
-
-			// enemy attack
-			if (it_e->step == 0) {
+			if (it_e->step == -1) {
+				bool walkFinish = false;
+				if (it_e->side == LSIDE) {
+					it_e->walkLeft(scene.getPosX());
+					walkFinish = it_e->nextFrame(12 * 2);
+				}
+				else if (it_e->side == RSIDE) {
+					it_e->walkRight(scene.getPosX());
+					walkFinish = it_e->nextFrame(12 * 2);
+				}
+				if (walkFinish) {
+					it_e->running++;
+				}
+				if (it_e->running >= 3) {
+					it_e->step = 0;
+					it_e->running = 0;
+				}
+			}
+			else if (it_e->step == 0) {
 				it_e->state = EnemyState::E_ATTACK;
-
 				if (it_e->type == Arms::DALLY) {
 					if (it_e->step == 0) {
 						if (it_e->side == LSIDE) {
@@ -335,6 +350,7 @@ void My_Display() {
 							it_e->dallyRight();
 							replay = it_e->nextFrame(28 * 2);
 						}
+
 					}
 				}
 				else if (it_e->type == Arms::PISTOL) {
@@ -374,11 +390,8 @@ void My_Display() {
 					it_e->step++;
 				}
 			}
-
-			// enemy idle
 			else {
 				it_e->state = EnemyState::E_IDLE;
-
 				if (it_e->side == LSIDE) {
 					it_e->restLeft();
 					replay = it_e->nextFrame(7 * 2);

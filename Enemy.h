@@ -50,6 +50,7 @@ public:
 	void pistolLeft(void);
 	void saberLeft(void);
 	void restLeft(void);
+	void walkLeft(float);
 	void deathLeft();
 
 	// Right
@@ -57,6 +58,7 @@ public:
 	void pistolRight(void);
 	void saberRight(void);
 	void restRight(void);
+	void walkRight(float);
 	void deathRight();
 
 	Arms type;
@@ -64,6 +66,7 @@ public:
 	Death deathType;
 	EnemyState state;
 
+	int running = 0;
 	int step = 0;
 	bool isDieing;
 private:
@@ -74,6 +77,7 @@ private:
 	Sprite2D pistolLeftSprite[12];
 	Sprite2D saberLeftSprite[23];
 	Sprite2D restLeftSprite[7];
+	Sprite2D walkLeftSprite[12];
 	Sprite2D deathKnifeLeftSprite[16];
 	Sprite2D deathGunLeftSprite[15];
 	Sprite2D deathGrenadeLeftSprite[10];
@@ -83,6 +87,7 @@ private:
 	Sprite2D pistolRightSprite[12];
 	Sprite2D saberRightSprite[23];
 	Sprite2D restRightSprite[7];
+	Sprite2D walkRightSprite[12];
 	Sprite2D deathKnifeRightSprite[16];
 	Sprite2D deathGunRightSprite[15];
 	Sprite2D deathGrenadeRightSprite[10];

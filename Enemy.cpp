@@ -16,18 +16,20 @@ Enemy::Enemy(Arms t = DALLY, Side d = RSIDE, float InitX = 0.0, float InitY = -0
 
 	type = t;
 	side = d;
-	state = EnemyState::E_IDLE;
 
 	pos = glm::vec2(InitX, InitY);
-	moveSpeed = glm::vec2(0.055f, 0.1f);
+	//moveSpeed = glm::vec2(0.055f, 0.1f);
 	mapLocation.x = mapLocationList[enemyNum];
 	mapLocation.y = InitY;
-	setScreenPosX(sceneLocX);
-	setScreenPosY(mapLocation.y);
+	//setScreenPosX(sceneLocX);
+	//setScreenPosY(mapLocation.y);
 
 	enemyNum++;
 	if (enemyNum >= (sizeof(mapLocationList) / sizeof(float)))
 		enemyNum = (sizeof(mapLocationList) / sizeof(float)) - 1;
+
+	moveSpeed = glm::vec2(0.0005f, 0.0f);
+	step = -1;
 
 	isDieing = false;
 }
@@ -102,6 +104,14 @@ void Enemy::initSprite() {
 		stream >> filename;
 		restLeftSprite[i].Init(filename, 0);
 	}
+	// Walk
+	for (int i = 0; i < 12; i++) {
+		std::stringstream stream;
+		stream << "../media/Enemy/Walk/Left/" << i << ".png";
+		std::string filename = "";
+		stream >> filename;
+		walkLeftSprite[i].Init(filename, 0);
+	}
 	// Death reason
 	// Grenade
 	for (int i = 0; i < 10; i++) {
@@ -167,6 +177,14 @@ void Enemy::initSprite() {
 		std::string filename = "";
 		stream >> filename;
 		restRightSprite[i].Init(filename, 0);
+	}
+	// Walk
+	for (int i = 0; i < 12; i++) {
+		std::stringstream stream;
+		stream << "../media/Enemy/Walk/Right/" << i << ".png";
+		std::string filename = "";
+		stream >> filename;
+		walkRightSprite[i].Init(filename, 0);
 	}
 	// Death reason
 	// Grenade
@@ -276,6 +294,29 @@ void Enemy::restLeft() {
 	glUniformMatrix4fv(uniforms.proj_matrix, 1, GL_FALSE, &(projection)[0][0]);
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 	restLeftSprite[spriteIdx / 2].Disable();
+
+	glBindVertexArray(0);
+	glUseProgram(0);
+}
+// Walk function
+void Enemy::walkLeft(float sceneLocX) {
+	mapLocation.x += moveSpeed.x;
+	setScreenPosX(sceneLocX);
+	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(pos), &pos);
+	//glBufferSubData(GL_ARRAY_BUFFER, sizeof(pos), sizeof(GL_INT) * objectCount, frame);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	//Update shaders' input variable
+	glUseProgram(program);
+
+	glBindVertexArray(vao);
+
+	walkLeftSprite[spriteIdx / 2].Enable();
+	glUniformMatrix4fv(uniforms.mv_matrix, 1, GL_FALSE, &(view * model)[0][0]);
+	glUniformMatrix4fv(uniforms.proj_matrix, 1, GL_FALSE, &(projection)[0][0]);
+	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+	walkLeftSprite[spriteIdx / 2].Disable();
 
 	glBindVertexArray(0);
 	glUseProgram(0);
@@ -399,6 +440,29 @@ void Enemy::restRight() {
 	glUniformMatrix4fv(uniforms.proj_matrix, 1, GL_FALSE, &(projection)[0][0]);
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 	restRightSprite[spriteIdx / 2].Disable();
+
+	glBindVertexArray(0);
+	glUseProgram(0);
+}
+// Walk function
+void Enemy::walkRight(float sceneLocX) {
+	mapLocation.x -= moveSpeed.x;
+	setScreenPosX(sceneLocX);
+	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(pos), &pos);
+	//glBufferSubData(GL_ARRAY_BUFFER, sizeof(pos), sizeof(GL_INT) * objectCount, frame);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	//Update shaders' input variable
+	glUseProgram(program);
+
+	glBindVertexArray(vao);
+
+	walkRightSprite[spriteIdx / 2].Enable();
+	glUniformMatrix4fv(uniforms.mv_matrix, 1, GL_FALSE, &(view * model)[0][0]);
+	glUniformMatrix4fv(uniforms.proj_matrix, 1, GL_FALSE, &(projection)[0][0]);
+	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+	walkRightSprite[spriteIdx / 2].Disable();
 
 	glBindVertexArray(0);
 	glUseProgram(0);
