@@ -4,18 +4,16 @@
 #include <iostream>
 
 #define MAX_KEY_NUM			256
-#define INIT_LOC_X			(-0.5f)
-#define INIT_LOC_Y			(-0.8f)
-#define INIT_MAP_LOC_X		(0.01f)
+#define INIT_MAP_LOC_X		(-0.036f)
+#define INIT_MAP_LOC_Y		(-0.8f)
 #define TEX_SIZE_WIDTH		(0.17f)
 #define BLINK_TIME			70
-#define KNIFE_ATTACK_GAP	(0.01f)
 
 static std::string stateSymbols[] = {
 	"Idle", "Walk", "Stop", "Jump", "Fall", "JumpForward", "Redirect", "Knife" ,"Gun", "Grenade", "Up", "GunUp" , "IdleUp"
 };
 enum State {
-	IDLE, WALK, STOP, JUMP, FALL, JUMP_FORWARD, REDIRECT, KNIFE, GUN, GRENADE, UP, GUNUP, IDLEUP
+	IDLE, WALK, STOP, JUMP, FALL, JUMP_FORWARD, REDIRECT, KNIFE, GUN, GRENADE, UP, GUNUP, IDLEUP, DEATH_WHICH_ATTACK_FROM_LEFT, DEATH_WHICH_ATTACK_FROM_RIGHT
 };
 enum Direction {
 	LEFT, RIGHT
@@ -33,14 +31,13 @@ public:
 
 	void reborn();
 
-	glm::vec2 getScreenPosition(void);
 	int getSpriteId(void);
 
 	// Left
 	void LtoR(void);
 	void idleLeft(void);
 	void stopLeft(void);
-	void walkLeft(void);
+	void walkLeft(float);
 	void upLeft(void);
 	void idleUpLeft(void);
 	void downLeft(void);
@@ -50,12 +47,13 @@ public:
 	void shootLeft(void);
 	void shootUpLeft(void);
 	void grenadeLeft(void);
+	void deathLeft(void);
 
 	// Right
 	void RtoL(void);
 	void idleRight(void);
 	void stopRight(void);
-	void walkRight(void);
+	void walkRight(float);
 	void upRight(void);
 	void idleUpRight(void);
 	void downRight(void);
@@ -65,10 +63,13 @@ public:
 	void shootRight(void);
 	void shootUpRight(void);
 	void grenadeRight(void);
+	void deathRight(void);
 
 	State state;
 	Direction direction;
 	int blinkingCounter;
+	bool isDieing;
+	bool noDamageStatus;
 
 private:
 	void initSprite(void);
@@ -87,6 +88,7 @@ private:
 	Sprite2D shootLeftSprite[12];
 	Sprite2D shootUpLeftSprite[12];
 	Sprite2D grenadeLeftSprite[7];
+	Sprite2D deathLeftSprite[10];
 
 	// Right
 	Sprite2D RtoLSprite[4];
@@ -102,10 +104,9 @@ private:
 	Sprite2D shootRightSprite[12];
 	Sprite2D shootUpRightSprite[12];
 	Sprite2D grenadeRightSprite[7];
+	Sprite2D deathRightSprite[10];
 
 	bool keyboardState[MAX_KEY_NUM];
 	GLint blinkingLocation;
-
-	//float mapLocationX;
 };
 

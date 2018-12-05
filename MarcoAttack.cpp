@@ -1,31 +1,56 @@
 #include "MarcoAttack.h"
 
-MarcoAttack::MarcoAttack(MAttack t = BULLET, Orientation d = R, float initX = 0.0f, float initY = 0.0f, float scenePosX = 0.0f) {
+float MarcoAttack::KNIFE_ATTACK_GAP_LEFT = 0.015f + 0.003f;
+float MarcoAttack::KNIFE_ATTACK_GAP_RIGHT = 0.015f;
+float MarcoAttack::BULLET_ATTACK_GAP_X = 0.005f;
+float MarcoAttack::BULLET_ATTACK_GAP_Y = 0.3f;
+float MarcoAttack::GRENADE_ATTACK_GAP_X = 0.003f;
+float MarcoAttack::GRENADE_ATTACK_GAP_Y = 0.25f;
+float MarcoAttack::GRENADE_ATTACK_RANGE = 0.013f;
+
+// Constructor
+MarcoAttack::MarcoAttack(MAttack t = BULLET, Orientation d = R, float initX = 0.0f, float initY = 0.0f) {
 	attack = t;
 	orient = d;
-	pos.x = initX;
-	pos.y = initY;
-	mapLocationX = Object::getMapLocation(scenePosX).x;
-	mapLocationY = Object::getMapLocation(scenePosX).y;
 	if (t == MAttack::BULLET) {
-		moveSpeed.x = 0.1f;
-		moveSpeed.y = 0.0f;
-		mapOffsetX = 0.004f;
+		if (d == Orientation::L) {
+			moveSpeed.x = 0.004f;
+			mapLocation.x = initX - 0.0013;
+			mapLocation.y = initY + 0.2266;
+		}
+		else if (d == Orientation::R) {
+			moveSpeed.x = 0.004f;
+			mapLocation.x = initX + 0.0013;
+			mapLocation.y = initY + 0.2266;
+		}
+		else if (d == Orientation::U) {
+			moveSpeed.y = 0.1f;
+			mapLocation.x = initX;
+			mapLocation.y = initY + 0.45;
+		}
+		setScreenPosX(mapLocation.x);
+		setScreenPosY(mapLocation.y);
 	}
 	else if (t == MAttack::PINEAPPLE) {
-		mapOffsetX = 0.0007f;
+		// Pineapple's movespeed.x define in fly
+		moveSpeed.x = 0.0f;
+		if (d == Orientation::L) {
+			mapLocation.x = initX - 0.0025;
+		}
+		else if (d == Orientation::R) {
+			mapLocation.x = initX + 0.0025;
+		}
+		mapLocation.y = initY + 0.3812;
 	}
 	action = Action::FLY;
+	setScreenPosX(mapLocation.x);
+	setScreenPosY(mapLocation.y);
 	serviveTimes = 0;
 	canMove = true;
 }
-
+// Distructor
 MarcoAttack::~MarcoAttack() {}
-
-glm::vec2 MarcoAttack::getMapLocation(float sceneLocX, glm::vec2 cur) {
-	return glm::vec2((((cur.x + 1.0f) / 2.0f) * 0.04731f) + sceneLocX - 0.022f, cur.y);
-}
-
+// Sprite ID counter
 bool MarcoAttack::nextFrame() {
 	spriteIdx++;
 	// Fly
@@ -66,7 +91,7 @@ bool MarcoAttack::nextFrame() {
 	}
 	return false;
 }
-
+// Initial sprite picture
 void MarcoAttack::initSprite() {
 	// Bullet
 	if (attack == MAttack::BULLET) {
@@ -140,9 +165,8 @@ void MarcoAttack::initSprite() {
 // Bullet
 // Left
 void MarcoAttack::bulletFlyLeft(float scenePosX) {
-	mapLocationX -= mapOffsetX;
+	mapLocation.x -= moveSpeed.x;
 	setScreenPosX(scenePosX);
-	//pos.x -= moveSpeed.x;
 
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(pos), &pos);
@@ -165,9 +189,8 @@ void MarcoAttack::bulletFlyLeft(float scenePosX) {
 }
 // Right
 void MarcoAttack::bulletFlyRight(float scenePosX) {
-	mapLocationX += mapOffsetX;
+	mapLocation.x += moveSpeed.x;
 	setScreenPosX(scenePosX);
-	//pos.x += moveSpeed.x;
 
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(pos), &pos);
@@ -190,7 +213,9 @@ void MarcoAttack::bulletFlyRight(float scenePosX) {
 }
 // Up
 void MarcoAttack::bulletFlyUp(float scenePosX) {
-	pos.y += moveSpeed.y;
+	setScreenPosX(scenePosX);
+	mapLocation.y += moveSpeed.y;
+	setScreenPosY(mapLocation.y);
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(pos), &pos);
 	//glBufferSubData(GL_ARRAY_BUFFER, sizeof(pos), sizeof(GL_INT) * objectCount, frame);
@@ -212,6 +237,7 @@ void MarcoAttack::bulletFlyUp(float scenePosX) {
 }
 // Explosion
 void MarcoAttack::bulletExplode(float scenePosX) {
+	setScreenPosX(scenePosX);
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(pos), &pos);
 	//glBufferSubData(GL_ARRAY_BUFFER, sizeof(pos), sizeof(GL_INT) * objectCount, frame);
@@ -238,12 +264,12 @@ void MarcoAttack::pineappleFlyLeft(float scenePosX) {
 	// Move curve
 	// High wave start
 	if (spriteIdx <= 7) {
-		moveSpeed.x = 0.0300f;
+		moveSpeed.x = 0.0015f;
 		moveSpeed.y = pineappleCurveHighUp[spriteIdx];
 	}
 	// High wave down
 	else if (spriteIdx <= 19) {
-		moveSpeed.x = 0.0300f;
+		moveSpeed.x = 0.0015f;
 		moveSpeed.y = -pineappleCurveHighDown[spriteIdx - 8];
 	}
 	// Wave trough
@@ -253,12 +279,12 @@ void MarcoAttack::pineappleFlyLeft(float scenePosX) {
 	}
 	// Low wave start
 	else if (spriteIdx <= 23) {
-		moveSpeed.x = 0.0400f;
+		moveSpeed.x = 0.0020f;
 		moveSpeed.y = pineappleCurveLowUp[spriteIdx - 21];
 	}
 	// Low wave down
 	else if (spriteIdx <= 26) {
-		moveSpeed.x = 0.0400f;
+		moveSpeed.x = 0.0020f;
 		moveSpeed.y = -pineappleCurveLowDown[spriteIdx - 24];
 	}
 	else if (spriteIdx == 27) {
@@ -266,10 +292,10 @@ void MarcoAttack::pineappleFlyLeft(float scenePosX) {
 		moveSpeed.y = 0.0f;
 	}
 	// Change position
-	mapLocationX -= mapOffsetX;
+	mapLocation.x -= moveSpeed.x;
 	setScreenPosX(scenePosX);
-	//pos.x -= moveSpeed.x;
-	pos.y += moveSpeed.y;
+	mapLocation.y += moveSpeed.y;
+	setScreenPosY(mapLocation.y);
 
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(pos), &pos);
@@ -295,12 +321,12 @@ void MarcoAttack::pineappleFlyRight(float scenePosX) {
 	// Move curve
 	// High wave start
 	if (spriteIdx <= 7) {
-		moveSpeed.x = 0.0300f;
+		moveSpeed.x = 0.0015f;
 		moveSpeed.y = pineappleCurveHighUp[spriteIdx];
 	}
 	// High wave down
 	else if (spriteIdx <= 19) {
-		moveSpeed.x = 0.0300f;
+		moveSpeed.x = 0.0015f;
 		moveSpeed.y = -pineappleCurveHighDown[spriteIdx - 8];
 	}
 	// Wave trough
@@ -310,12 +336,12 @@ void MarcoAttack::pineappleFlyRight(float scenePosX) {
 	}
 	// Low wave start
 	else if (spriteIdx <= 23) {
-		moveSpeed.x = 0.0400f;
+		moveSpeed.x = 0.0020f;
 		moveSpeed.y = pineappleCurveLowUp[spriteIdx - 21];
 	}
 	// Low wave down
 	else if (spriteIdx <= 26) {
-		moveSpeed.x = 0.0400f;
+		moveSpeed.x = 0.0020f;
 		moveSpeed.y = -pineappleCurveLowDown[spriteIdx - 24];
 	}
 	else if (spriteIdx == 27) {
@@ -323,10 +349,10 @@ void MarcoAttack::pineappleFlyRight(float scenePosX) {
 		moveSpeed.y = 0.0f;
 	}
 	// Change position
-	mapLocationX += mapOffsetX;
+	mapLocation.x += moveSpeed.x;
 	setScreenPosX(scenePosX);
-	//pos.x += moveSpeed.x;
-	pos.y += moveSpeed.y;
+	mapLocation.y += moveSpeed.y;
+	setScreenPosY(mapLocation.y);
 
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(pos), &pos);

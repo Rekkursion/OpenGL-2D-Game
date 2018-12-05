@@ -1,30 +1,23 @@
 #pragma warning(disable:4996)
 #include "Marco.h"
-
+// Constructor
 Marco::Marco() {
-	for (int k = 0; k < MAX_KEY_NUM; k++)
-		keyboardState[k] = false;
-	spriteIdx = 0;
+	mapLocation = glm::vec2(INIT_MAP_LOC_X, INIT_MAP_LOC_Y);
+	setScreenPosX(0.0f);
+	setScreenPosY(INIT_MAP_LOC_Y);
 
-	state = State::IDLE;
-	direction = Direction::RIGHT;
-	pos = glm::vec2(INIT_LOC_X, INIT_LOC_Y);
-	moveSpeed.x = 0.025f;
-	moveSpeed.y = 0.1f;
-	mapLocationX = INIT_MAP_LOC_X;
-	canMove = true;
-	atCentre = false;
-
-	blinkingCounter = 0;
+	reborn();
 }
-
+// Distructor
 Marco::~Marco() {}
-
-void Marco::setKeyboard(int key, bool state) {
+// Set keyboard table
+void Marco::setKeyboard(int key, bool state) 
+{
 	keyboardState[key] = state;
 }
-
-bool Marco::getKeyboard(int key) {
+// Get keyboard function
+bool Marco::getKeyboard(int key)
+{
 	if (key < 0)
 		key = 0;
 
@@ -33,23 +26,37 @@ bool Marco::getKeyboard(int key) {
 
 	return keyboardState[key];
 }
-
+// Reborn function
 void Marco::reborn() {
+	for (int k = 0; k < MAX_KEY_NUM; k++)
+		keyboardState[k] = false;
+	spriteIdx = 0;
+	// Initial action
 	state = State::IDLE;
+	// Initial direction
 	direction = Direction::RIGHT;
-	pos = glm::vec2(0.0, INIT_LOC_Y);
+	// Initial moving speed
+	moveSpeed.x = 0.0015f;
+	moveSpeed.y = 0.1f;
+
+	mapLocation.y = INIT_MAP_LOC_Y;
+	setScreenPosY(INIT_MAP_LOC_Y);
+
+	canMove = true;
+	atCentre = false;
+	isDieing = false;
+	noDamageStatus = true;
+
 	blinkingCounter = 0;
 }
-
-glm::vec2 Marco::getScreenPosition() {
-	return pos;
-}
-
-int Marco::getSpriteId() {
+// Get sprite ID
+int Marco::getSpriteId() 
+{
 	return spriteIdx;
 }
-
-void Marco::initSprite() {
+// Initial sprite picture
+void Marco::initSprite() 
+{
 	blinkingLocation = glGetUniformLocation(program, "blinkingcounter");
 
 	// Initial LEFT
@@ -157,6 +164,16 @@ void Marco::initSprite() {
 		stream >> filename;
 		grenadeLeftSprite[i].Init(filename, 0);
 	}
+	// Initial death left
+	for (int i = 0; i < 10; i++) {
+		std::stringstream stream;
+		stream << "../media/Marco/Left/Death/" << i << ".png";
+		std::string filename = "";
+		stream >> filename;
+		deathLeftSprite[i].Init(filename, 0);
+	}
+	
+	
 	// Initial RIGHT
 	// Initial Right to Left
 	for (int i = 0; i < 4; i++) {
@@ -262,12 +279,22 @@ void Marco::initSprite() {
 		stream >> filename;
 		grenadeRightSprite[i].Init(filename, 0);
 	}
+	// Initial death right
+	for (int i = 0; i < 10; i++) {
+		std::stringstream stream;
+		stream << "../media/Marco/Right/Death/" << i << ".png";
+		std::string filename = "";
+		stream >> filename;
+		deathRightSprite[i].Init(filename, 0);
+	}
 }
 
 // LEFT
 // Left turn to Right
-void Marco::LtoR() {
-	pos.x += moveSpeed.x;
+void Marco::LtoR() 
+{
+	/*mapLocation.x += moveSpeed.x;
+	setScreenPosX(mapLocation.x);*/
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(pos), &pos);
 	//glBufferSubData(GL_ARRAY_BUFFER, sizeof(pos), sizeof(GL_INT) * objectCount, frame);
@@ -289,7 +316,8 @@ void Marco::LtoR() {
 	glUseProgram(0);
 }
 // Idle Left
-void Marco::idleLeft() {
+void Marco::idleLeft()
+{
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(pos), &pos);
 	//glBufferSubData(GL_ARRAY_BUFFER, sizeof(pos), sizeof(GL_INT) * objectCount, frame);
@@ -311,7 +339,8 @@ void Marco::idleLeft() {
 	glUseProgram(0);
 }
 // Stop Left
-void Marco::stopLeft() {
+void Marco::stopLeft()
+{
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(pos), &pos);
 	//glBufferSubData(GL_ARRAY_BUFFER, sizeof(pos), sizeof(GL_INT) * objectCount, frame);
@@ -333,22 +362,22 @@ void Marco::stopLeft() {
 	glUseProgram(0);
 }
 // Walk Left
-void Marco::walkLeft() {
-	//std::cout << "pos.x " << pos.x << ", canMove: " << canMove << std::endl;
-	atCentre = (fabs(pos.x - 0.0f) <= 0.0015f);
+void Marco::walkLeft(float sceneLocX) 
+{
+	setScreenPosX(sceneLocX);
 
-	if (atCentre)
-		pos.x = 0.0f;
+	atCentre = (fabs(pos.x - 0.0f) <= moveSpeed.x);
 
-	if ((fabs(pos.x - 0.0f) > 0.0015f || atCentre) && pos.x > -1.0 && canMove) {
-		pos.x -= moveSpeed.x;
+	if ((fabs(pos.x - 0.0f) > moveSpeed.x || atCentre) && pos.x > -1.0 && canMove)
+	{
 		if (pos.x < -1.0 + (TEX_SIZE_WIDTH / 2.0f))
 			pos.x = -1.0 + (TEX_SIZE_WIDTH / 2.0f);
 	}
+	
+	mapLocation.x -= moveSpeed.x;
+	setScreenPosX(sceneLocX);
 
-	mapLocationX -= 0.0015f;
-	if (mapLocationX < 0.0f)
-		mapLocationX = 0.0f;
+	//std::cout << "pos.x " << pos.x << ", canMove: " << canMove << ", atCentre: " << atCentre << std::endl;
 
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(pos), &pos);
@@ -371,7 +400,8 @@ void Marco::walkLeft() {
 	glUseProgram(0);
 }
 // Up Left
-void Marco::upLeft() {
+void Marco::upLeft()
+{
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(pos), &pos);
 	//glBufferSubData(GL_ARRAY_BUFFER, sizeof(pos), sizeof(GL_INT) * objectCount, frame);
@@ -393,7 +423,8 @@ void Marco::upLeft() {
 	glUseProgram(0);
 }
 // Up idle Left
-void Marco::idleUpLeft() {
+void Marco::idleUpLeft() 
+{
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(pos), &pos);
 	//glBufferSubData(GL_ARRAY_BUFFER, sizeof(pos), sizeof(GL_INT) * objectCount, frame);
@@ -415,7 +446,8 @@ void Marco::idleUpLeft() {
 	glUseProgram(0);
 }
 // Down Left
-void Marco::downLeft() {
+void Marco::downLeft() 
+{
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(pos), &pos);
 	//glBufferSubData(GL_ARRAY_BUFFER, sizeof(pos), sizeof(GL_INT) * objectCount, frame);
@@ -437,9 +469,11 @@ void Marco::downLeft() {
 	glUseProgram(0);
 }
 // Jump Left
-void Marco::jumpLeft() {
+void Marco::jumpLeft()
+{
 	if (spriteIdx < 5)
-		pos.y += moveSpeed.y;
+		mapLocation.y += moveSpeed.y;
+	setScreenPosY(mapLocation.y);
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(pos), &pos);
 	//glBufferSubData(GL_ARRAY_BUFFER, sizeof(pos), sizeof(GL_INT) * objectCount, frame);
@@ -461,9 +495,11 @@ void Marco::jumpLeft() {
 	glUseProgram(0);
 }
 // Fall Left
-void Marco::fallLeft() {
+void Marco::fallLeft()
+{
 	if (spriteIdx > 3)
-		pos.y -= moveSpeed.y;
+		mapLocation.y -= moveSpeed.y;
+	setScreenPosY(mapLocation.y);
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(pos), &pos);
 	//glBufferSubData(GL_ARRAY_BUFFER, sizeof(pos), sizeof(GL_INT) * objectCount, frame);
@@ -485,7 +521,8 @@ void Marco::fallLeft() {
 	glUseProgram(0);
 }
 // Knife Left
-void Marco::knifeLeft() {
+void Marco::knifeLeft()
+{
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(pos), &pos);
 	//glBufferSubData(GL_ARRAY_BUFFER, sizeof(pos), sizeof(GL_INT) * objectCount, frame);
@@ -507,7 +544,8 @@ void Marco::knifeLeft() {
 	glUseProgram(0);
 }
 // Gun Left
-void Marco::shootLeft() {
+void Marco::shootLeft() 
+{
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(pos), &pos);
 	//glBufferSubData(GL_ARRAY_BUFFER, sizeof(pos), sizeof(GL_INT) * objectCount, frame);
@@ -529,7 +567,8 @@ void Marco::shootLeft() {
 	glUseProgram(0);
 }
 // Gun Up Left
-void Marco::shootUpLeft() {
+void Marco::shootUpLeft()
+{
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(pos), &pos);
 	//glBufferSubData(GL_ARRAY_BUFFER, sizeof(pos), sizeof(GL_INT) * objectCount, frame);
@@ -551,7 +590,8 @@ void Marco::shootUpLeft() {
 	glUseProgram(0);
 }
 // Grenade Left
-void Marco::grenadeLeft() {
+void Marco::grenadeLeft() 
+{
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(pos), &pos);
 	//glBufferSubData(GL_ARRAY_BUFFER, sizeof(pos), sizeof(GL_INT) * objectCount, frame);
@@ -572,10 +612,35 @@ void Marco::grenadeLeft() {
 	glBindVertexArray(0);
 	glUseProgram(0);
 }
+// death left
+void Marco::deathLeft() {
+	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(pos), &pos);
+	//glBufferSubData(GL_ARRAY_BUFFER, sizeof(pos), sizeof(GL_INT) * objectCount, frame);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	//Update shaders' input variable
+	glUseProgram(program);
+
+	glBindVertexArray(vao);
+
+	deathLeftSprite[spriteIdx].Enable();
+	glUniformMatrix4fv(uniforms.mv_matrix, 1, GL_FALSE, &(view * model)[0][0]);
+	glUniformMatrix4fv(uniforms.proj_matrix, 1, GL_FALSE, &(projection)[0][0]);
+	glUniform1f(blinkingLocation, (float)blinkingCounter);
+	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+	deathLeftSprite[spriteIdx].Disable();
+
+	glBindVertexArray(0);
+	glUseProgram(0);
+}
+
 // RIGHT
 // Right turn to Left
-void Marco::RtoL() {
-	pos.x -= moveSpeed.x;
+void Marco::RtoL() 
+{
+	/*mapLocation.x -= moveSpeed.x;
+	setScreenPosX(mapLocation.x);*/
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(pos), &pos);
 	//glBufferSubData(GL_ARRAY_BUFFER, sizeof(pos), sizeof(GL_INT) * objectCount, frame);
@@ -597,7 +662,8 @@ void Marco::RtoL() {
 	glUseProgram(0);
 }
 // Idle Right
-void Marco::idleRight() {
+void Marco::idleRight()
+{
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(pos), &pos);
 	//glBufferSubData(GL_ARRAY_BUFFER, sizeof(pos), sizeof(GL_INT) * objectCount, frame);
@@ -619,7 +685,8 @@ void Marco::idleRight() {
 	glUseProgram(0);
 }
 // Stop Right
-void Marco::stopRight() {
+void Marco::stopRight()
+{
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(pos), &pos);
 	//glBufferSubData(GL_ARRAY_BUFFER, sizeof(pos), sizeof(GL_INT) * objectCount, frame);
@@ -641,24 +708,19 @@ void Marco::stopRight() {
 	glUseProgram(0);
 }
 // Walk Right
-void Marco::walkRight() {
-	//std::cout << "pos.x " << pos.x << ", canMove " << canMove << ", atCentre " << atCentre << std::endl;
-	atCentre = (fabs(pos.x - 0.0f) <= 0.015f);
+void Marco::walkRight(float sceneLocX) 
+{
+	setScreenPosX(sceneLocX);
 
-	if (atCentre)
-		pos.x = 0.0f;
+	atCentre = (fabs(pos.x - 0.0f) <= moveSpeed.x);
 
-	if ((fabs(pos.x - 0.0f) > 0.015f || atCentre) && canMove) {
-		if (pos.x == 0.0f)
-			pos.x += 0.006f;
-		pos.x += moveSpeed.x;
-		if (pos.x >= 1.0 - (TEX_SIZE_WIDTH / 2.0f))
-			pos.x = 1.0 - (TEX_SIZE_WIDTH / 2.0f);
+	if ((fabs(pos.x - 0.0f) > moveSpeed.x || atCentre) && pos.x < 1.0 && canMove) {
+		//if (pos.x < -1.0 + (TEX_SIZE_WIDTH / 2.0f))
+		//	pos.x = -1.0 + (TEX_SIZE_WIDTH / 2.0f);
 	}
 
-	mapLocationX += 0.0015f;
-	//if (mapLocationX < 0.0f)
-	//	mapLocationX = 0.0f;
+	mapLocation.x += moveSpeed.x;
+	setScreenPosX(sceneLocX);
 
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(pos), &pos);
@@ -681,7 +743,8 @@ void Marco::walkRight() {
 	glUseProgram(0);
 }
 // Up Right
-void Marco::upRight() {
+void Marco::upRight()
+{
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(pos), &pos);
 	//glBufferSubData(GL_ARRAY_BUFFER, sizeof(pos), sizeof(GL_INT) * objectCount, frame);
@@ -703,7 +766,8 @@ void Marco::upRight() {
 	glUseProgram(0);
 }
 // Up idle Right
-void Marco::idleUpRight() {
+void Marco::idleUpRight() 
+{
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(pos), &pos);
 	//glBufferSubData(GL_ARRAY_BUFFER, sizeof(pos), sizeof(GL_INT) * objectCount, frame);
@@ -725,7 +789,8 @@ void Marco::idleUpRight() {
 	glUseProgram(0);
 }
 // Down Right
-void Marco::downRight() {
+void Marco::downRight() 
+{
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(pos), &pos);
 	//glBufferSubData(GL_ARRAY_BUFFER, sizeof(pos), sizeof(GL_INT) * objectCount, frame);
@@ -749,7 +814,8 @@ void Marco::downRight() {
 // Jump Right
 void Marco::jumpRight() {
 	if (spriteIdx < 5)
-		pos.y += moveSpeed.y;
+		mapLocation.y += moveSpeed.y;
+	setScreenPosY(mapLocation.y);
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(pos), &pos);
 	//glBufferSubData(GL_ARRAY_BUFFER, sizeof(pos), sizeof(GL_INT) * objectCount, frame);
@@ -773,8 +839,8 @@ void Marco::jumpRight() {
 // Jump Right
 void Marco::fallRight() {
 	if (spriteIdx > 3)
-		pos.y -= moveSpeed.y;
-
+		mapLocation.y -= moveSpeed.y;
+	setScreenPosY(mapLocation.y);
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(pos), &pos);
 	//glBufferSubData(GL_ARRAY_BUFFER, sizeof(pos), sizeof(GL_INT) * objectCount, frame);
@@ -796,7 +862,8 @@ void Marco::fallRight() {
 	glUseProgram(0);
 }
 // Knife Left
-void Marco::knifeRight() {
+void Marco::knifeRight()
+{
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(pos), &pos);
 	//glBufferSubData(GL_ARRAY_BUFFER, sizeof(pos), sizeof(GL_INT) * objectCount, frame);
@@ -818,7 +885,8 @@ void Marco::knifeRight() {
 	glUseProgram(0);
 }
 // Gun Right
-void Marco::shootRight() {
+void Marco::shootRight()
+{
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(pos), &pos);
 	//glBufferSubData(GL_ARRAY_BUFFER, sizeof(pos), sizeof(GL_INT) * objectCount, frame);
@@ -840,7 +908,8 @@ void Marco::shootRight() {
 	glUseProgram(0);
 }
 // Gun Up Right
-void Marco::shootUpRight() {
+void Marco::shootUpRight()
+{
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(pos), &pos);
 	//glBufferSubData(GL_ARRAY_BUFFER, sizeof(pos), sizeof(GL_INT) * objectCount, frame);
@@ -862,7 +931,8 @@ void Marco::shootUpRight() {
 	glUseProgram(0);
 }
 // Grenade Right
-void Marco::grenadeRight() {
+void Marco::grenadeRight() 
+{
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(pos), &pos);
 	//glBufferSubData(GL_ARRAY_BUFFER, sizeof(pos), sizeof(GL_INT) * objectCount, frame);
@@ -879,6 +949,28 @@ void Marco::grenadeRight() {
 	glUniform1f(blinkingLocation, (float)blinkingCounter);
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 	grenadeRightSprite[spriteIdx].Disable();
+
+	glBindVertexArray(0);
+	glUseProgram(0);
+}
+// death right
+void Marco::deathRight() {
+	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(pos), &pos);
+	//glBufferSubData(GL_ARRAY_BUFFER, sizeof(pos), sizeof(GL_INT) * objectCount, frame);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	//Update shaders' input variable
+	glUseProgram(program);
+
+	glBindVertexArray(vao);
+
+	deathRightSprite[spriteIdx].Enable();
+	glUniformMatrix4fv(uniforms.mv_matrix, 1, GL_FALSE, &(view * model)[0][0]);
+	glUniformMatrix4fv(uniforms.proj_matrix, 1, GL_FALSE, &(projection)[0][0]);
+	glUniform1f(blinkingLocation, (float)blinkingCounter);
+	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+	deathRightSprite[spriteIdx].Disable();
 
 	glBindVertexArray(0);
 	glUseProgram(0);

@@ -3,22 +3,21 @@
 #include <string>
 #include <vector>
 
-static std::string enemyType[] =
-{
+static std::string enemyType[] = {
 	"Dally", "Gun", "Knife"
 };
-enum Arms
-{
+enum Arms {
 	DALLY = 0, PISTOL, SABER
 };
-static Arms armsList[3] = {Arms::DALLY, Arms::PISTOL, Arms::SABER};
-enum Death
-{
+static Arms armsList[3] = { Arms::DALLY, Arms::PISTOL, Arms::SABER };
+enum Death {
 	STAB = 0, SHOT, BOMB
 };
-enum Side
-{
+enum Side {
 	LSIDE = 0, RSIDE
+};
+enum EnemyState {
+	E_IDLE, E_WALK, E_ATTACK
 };
 
 // Range: 0.0 - 0.925
@@ -35,43 +34,45 @@ public:
 
 	// Born
 	Enemy();
-	Enemy(Arms, Side, float, float);
+	Enemy(Arms, Side, float, float, float);
 
 	// Death
 	~Enemy();
 	
 	void setScreenPosX(float);
 	float getMapLocationX();
+	void killed(Death);
+
+	int getSpriteId(void);
 
 	// Left
 	void dallyLeft(void);
 	void pistolLeft(void);
 	void saberLeft(void);
 	void restLeft(void);
-	void deathLeft(Death);
+	void deathLeft();
 
 	// Right
 	void dallyRight(void);
 	void pistolRight(void);
 	void saberRight(void);
 	void restRight(void);
-	void deathRight(Death);
+	void deathRight();
 
 	Arms type;
 	Side side;
-	float screenLocationX = 0.0;
-	float screenLocationY = 0.0;
-	//float mapLocationX = 0.0;
-	//float mapLocationY = 0.0;
+	Death deathType;
+	EnemyState state;
 
 	int step = 0;
+	bool isDieing;
 private:
 	void initSprite(void);
 
 	// Left
 	Sprite2D dallyLeftSprite[28];
 	Sprite2D pistolLeftSprite[12];
-	Sprite2D saberLeftSprite[12];
+	Sprite2D saberLeftSprite[23];
 	Sprite2D restLeftSprite[7];
 	Sprite2D deathKnifeLeftSprite[16];
 	Sprite2D deathGunLeftSprite[15];
@@ -80,7 +81,7 @@ private:
 	// Right
 	Sprite2D dallyRightSprite[28];
 	Sprite2D pistolRightSprite[12];
-	Sprite2D saberRightSprite[12];
+	Sprite2D saberRightSprite[23];
 	Sprite2D restRightSprite[7];
 	Sprite2D deathKnifeRightSprite[16];
 	Sprite2D deathGunRightSprite[15];

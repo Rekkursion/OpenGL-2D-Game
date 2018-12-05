@@ -7,25 +7,29 @@ Enemy::Enemy() {
 	type = Arms::DALLY;
 	side = Side::RSIDE;
 	pos = glm::vec2(0.0, -0.8);
+	isDieing = false;
 }
 
-Enemy::Enemy(Arms t = DALLY, Side d = RSIDE, float InitX = 0.0, float InitY = -0.8)
+Enemy::Enemy(Arms t = DALLY, Side d = RSIDE, float InitX = 0.0, float InitY = -0.8, float sceneLocX = 0.0)
 {
 	spriteIdx = 0;
 
 	type = t;
 	side = d;
-	screenLocationX = InitX;
-	screenLocationY = InitY;
+	state = EnemyState::E_IDLE;
 
 	pos = glm::vec2(InitX, InitY);
 	moveSpeed = glm::vec2(0.055f, 0.1f);
-	mapLocationX = mapLocationList[enemyNum];
-	//canMove = true;
+	mapLocation.x = mapLocationList[enemyNum];
+	mapLocation.y = InitY;
+	setScreenPosX(sceneLocX);
+	setScreenPosY(mapLocation.y);
 
 	enemyNum++;
 	if (enemyNum >= (sizeof(mapLocationList) / sizeof(float)))
 		enemyNum = (sizeof(mapLocationList) / sizeof(float)) - 1;
+
+	isDieing = false;
 }
 // Distructor
 Enemy::~Enemy()
@@ -35,7 +39,7 @@ Enemy::~Enemy()
 void Enemy::setScreenPosX(float mapPosX) {
 	Object::setScreenPosX(mapPosX);
 
-	float dis_has_dir = mapLocationX - mapPosX;
+	float dis_has_dir = mapLocation.x - mapPosX;
 	if (dis_has_dir < 0)
 		side = Side::LSIDE;
 	else
@@ -43,19 +47,26 @@ void Enemy::setScreenPosX(float mapPosX) {
 }
 
 float Enemy::getMapLocationX() {
-	return mapLocationX;
+	return mapLocation.x;
+}
+
+void Enemy::killed(Death death_type) {
+	isDieing = true;
+	deathType = death_type;
+	initSpriteIndex();
+}
+
+int Enemy::getSpriteId() {
+	return spriteIdx;
 }
 
 // Initial Sprite
-void Enemy::initSprite()
-{
+void Enemy::initSprite() {
 	// LEFT
 	// The categories of arms
 	// Dilly-Dally
-	if (type == Arms::DALLY)
-	{
-		for (int i = 0; i < 28; i++) 
-		{
+	if (type == Arms::DALLY) {
+		for (int i = 0; i < 28; i++) {
 			std::stringstream stream;
 			stream << "../media/Enemy/Dally/Left/" << i << ".png";
 			std::string filename = "";
@@ -64,10 +75,8 @@ void Enemy::initSprite()
 		}
 	}
 	// Gun
-	else if (type == Arms::PISTOL)
-	{
-		for (int i = 0; i < 12; i++)
-		{
+	else if (type == Arms::PISTOL) {
+		for (int i = 0; i < 12; i++) {
 			std::stringstream stream;
 			stream << "../media/Enemy/Gun/Left/" << i << ".png";
 			std::string filename = "";
@@ -76,10 +85,8 @@ void Enemy::initSprite()
 		}
 	}
 	// Knife
-	else if (type == Arms::SABER)
-	{
-		for (int i = 0; i < 12; i++)
-		{
+	else if (type == Arms::SABER) {
+		for (int i = 0; i < 23; i++) {
 			std::stringstream stream;
 			stream << "../media/Enemy/Knife/Left/" << i << ".png";
 			std::string filename = "";
@@ -88,8 +95,7 @@ void Enemy::initSprite()
 		}
 	}
 	// Rest
-	for (int i = 0; i < 7; i++)
-	{
+	for (int i = 0; i < 7; i++) {
 		std::stringstream stream;
 		stream << "../media/Enemy/Rest/Left/" << i << ".png";
 		std::string filename = "";
@@ -98,8 +104,7 @@ void Enemy::initSprite()
 	}
 	// Death reason
 	// Grenade
-	for (int i = 0; i < 10; i++)
-	{
+	for (int i = 0; i < 10; i++) {
 		std::stringstream stream;
 		stream << "../media/Enemy/Death/Left/Grenade/" << i << ".png";
 		std::string filename = "";
@@ -107,8 +112,7 @@ void Enemy::initSprite()
 		deathGrenadeLeftSprite[i].Init(filename, 0);
 	}
 	// Gun
-	for (int i = 0; i < 15; i++)
-	{
+	for (int i = 0; i < 15; i++) {
 		std::stringstream stream;
 		stream << "../media/Enemy/Death/Left/Gun/" << i << ".png";
 		std::string filename = "";
@@ -116,8 +120,7 @@ void Enemy::initSprite()
 		deathGunLeftSprite[i].Init(filename, 0);
 	}
 	// Knife
-	for (int i = 0; i < 16; i++)
-	{
+	for (int i = 0; i < 16; i++) {
 		std::stringstream stream;
 		stream << "../media/Enemy/Death/Left/Knife/" << i << ".png";
 		std::string filename = "";
@@ -128,10 +131,8 @@ void Enemy::initSprite()
 	// RIGHT
 	// The categories of arms
 	// Dilly-Dally
-	if (type == Arms::DALLY)
-	{
-		for (int i = 0; i < 28; i++)
-		{
+	if (type == Arms::DALLY) {
+		for (int i = 0; i < 28; i++) {
 			std::stringstream stream;
 			stream << "../media/Enemy/Dally/Right/" << i << ".png";
 			std::string filename = "";
@@ -140,10 +141,8 @@ void Enemy::initSprite()
 		}
 	}
 	// Gun
-	else if (type == Arms::PISTOL)
-	{
-		for (int i = 0; i < 12; i++)
-		{
+	else if (type == Arms::PISTOL) {
+		for (int i = 0; i < 12; i++) {
 			std::stringstream stream;
 			stream << "../media/Enemy/Gun/Right/" << i << ".png";
 			std::string filename = "";
@@ -152,10 +151,8 @@ void Enemy::initSprite()
 		}
 	}
 	// Knife
-	else if (type == Arms::SABER)
-	{
-		for (int i = 0; i < 12; i++)
-		{
+	else if (type == Arms::SABER) {
+		for (int i = 0; i < 23; i++) {
 			std::stringstream stream;
 			stream << "../media/Enemy/Knife/Right/" << i << ".png";
 			std::string filename = "";
@@ -164,8 +161,7 @@ void Enemy::initSprite()
 		}
 	}
 	// Rest
-	for (int i = 0; i < 7; i++)
-	{
+	for (int i = 0; i < 7; i++) {
 		std::stringstream stream;
 		stream << "../media/Enemy/Rest/Right/" << i << ".png";
 		std::string filename = "";
@@ -174,8 +170,7 @@ void Enemy::initSprite()
 	}
 	// Death reason
 	// Grenade
-	for (int i = 0; i < 10; i++)
-	{
+	for (int i = 0; i < 10; i++) {
 		std::stringstream stream;
 		stream << "../media/Enemy/Death/Right/Grenade/" << i << ".png";
 		std::string filename = "";
@@ -183,8 +178,7 @@ void Enemy::initSprite()
 		deathGrenadeRightSprite[i].Init(filename, 0);
 	}
 	// Gun
-	for (int i = 0; i < 15; i++)
-	{
+	for (int i = 0; i < 15; i++) {
 		std::stringstream stream;
 		stream << "../media/Enemy/Death/Right/Gun/" << i << ".png";
 		std::string filename = "";
@@ -192,8 +186,7 @@ void Enemy::initSprite()
 		deathGunRightSprite[i].Init(filename, 0);
 	}
 	// Knife
-	for (int i = 0; i < 16; i++)
-	{
+	for (int i = 0; i < 16; i++) {
 		std::stringstream stream;
 		stream << "../media/Enemy/Death/Right/Knife/" << i << ".png";
 		std::string filename = "";
@@ -204,8 +197,7 @@ void Enemy::initSprite()
 
 // LEFT
 // Dilly-Dally function
-void Enemy::dallyLeft()
-{
+void Enemy::dallyLeft() {
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(pos), &pos);
 	//glBufferSubData(GL_ARRAY_BUFFER, sizeof(pos), sizeof(GL_INT) * objectCount, frame);
@@ -226,8 +218,7 @@ void Enemy::dallyLeft()
 	glUseProgram(0);
 }
 // Gun function
-void Enemy::pistolLeft()
-{
+void Enemy::pistolLeft() {
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(pos), &pos);
 	//glBufferSubData(GL_ARRAY_BUFFER, sizeof(pos), sizeof(GL_INT) * objectCount, frame);
@@ -248,8 +239,7 @@ void Enemy::pistolLeft()
 	glUseProgram(0);
 }
 // Knife function
-void Enemy::saberLeft()
-{
+void Enemy::saberLeft() {
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(pos), &pos);
 	//glBufferSubData(GL_ARRAY_BUFFER, sizeof(pos), sizeof(GL_INT) * objectCount, frame);
@@ -270,8 +260,7 @@ void Enemy::saberLeft()
 	glUseProgram(0);
 }
 // Rest function
-void Enemy::restLeft()
-{
+void Enemy::restLeft() {
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(pos), &pos);
 	//glBufferSubData(GL_ARRAY_BUFFER, sizeof(pos), sizeof(GL_INT) * objectCount, frame);
@@ -292,8 +281,7 @@ void Enemy::restLeft()
 	glUseProgram(0);
 }
 // Death function
-void Enemy::deathLeft(Death die)
-{
+void Enemy::deathLeft() {
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(pos), &pos);
 	//glBufferSubData(GL_ARRAY_BUFFER, sizeof(pos), sizeof(GL_INT) * objectCount, frame);
@@ -304,29 +292,26 @@ void Enemy::deathLeft(Death die)
 
 	glBindVertexArray(vao);
 
-	if (die == Death::BOMB)
-	{
+	if (deathType == Death::BOMB) {
 		deathGrenadeLeftSprite[spriteIdx / 2].Enable();
 		glUniformMatrix4fv(uniforms.mv_matrix, 1, GL_FALSE, &(view * model)[0][0]);
 		glUniformMatrix4fv(uniforms.proj_matrix, 1, GL_FALSE, &(projection)[0][0]);
 		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 		deathGrenadeLeftSprite[spriteIdx / 2].Disable();
 	}
-	else if (die == Death::SHOT)
-	{
-		deathGunLeftSprite[spriteIdx].Enable();
+	else if (deathType == Death::SHOT) {
+		deathGunLeftSprite[spriteIdx / 2].Enable();
 		glUniformMatrix4fv(uniforms.mv_matrix, 1, GL_FALSE, &(view * model)[0][0]);
 		glUniformMatrix4fv(uniforms.proj_matrix, 1, GL_FALSE, &(projection)[0][0]);
 		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-		deathGunLeftSprite[spriteIdx].Disable();
+		deathGunLeftSprite[spriteIdx / 2].Disable();
 	}
-	else if (die == Death::STAB)
-	{
-		deathKnifeLeftSprite[spriteIdx].Enable();
+	else if (deathType == Death::STAB) {
+		deathKnifeLeftSprite[spriteIdx / 2].Enable();
 		glUniformMatrix4fv(uniforms.mv_matrix, 1, GL_FALSE, &(view * model)[0][0]);
 		glUniformMatrix4fv(uniforms.proj_matrix, 1, GL_FALSE, &(projection)[0][0]);
 		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-		deathKnifeLeftSprite[spriteIdx].Disable();
+		deathKnifeLeftSprite[spriteIdx / 2].Disable();
 	}
 
 	glBindVertexArray(0);
@@ -335,8 +320,7 @@ void Enemy::deathLeft(Death die)
 
 // RIGHT
 // Dilly-Dally function
-void Enemy::dallyRight()
-{
+void Enemy::dallyRight() {
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(pos), &pos);
 	//glBufferSubData(GL_ARRAY_BUFFER, sizeof(pos), sizeof(GL_INT) * objectCount, frame);
@@ -357,8 +341,7 @@ void Enemy::dallyRight()
 	glUseProgram(0);
 }
 // Gun function
-void Enemy::pistolRight()
-{
+void Enemy::pistolRight() {
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(pos), &pos);
 	//glBufferSubData(GL_ARRAY_BUFFER, sizeof(pos), sizeof(GL_INT) * objectCount, frame);
@@ -379,8 +362,7 @@ void Enemy::pistolRight()
 	glUseProgram(0);
 }
 // Knife function
-void Enemy::saberRight()
-{
+void Enemy::saberRight() {
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(pos), &pos);
 	//glBufferSubData(GL_ARRAY_BUFFER, sizeof(pos), sizeof(GL_INT) * objectCount, frame);
@@ -401,8 +383,7 @@ void Enemy::saberRight()
 	glUseProgram(0);
 }
 // Rest function
-void Enemy::restRight()
-{
+void Enemy::restRight() {
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(pos), &pos);
 	//glBufferSubData(GL_ARRAY_BUFFER, sizeof(pos), sizeof(GL_INT) * objectCount, frame);
@@ -423,8 +404,7 @@ void Enemy::restRight()
 	glUseProgram(0);
 }
 // Death function
-void Enemy::deathRight(Death die)
-{
+void Enemy::deathRight() {
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(pos), &pos);
 	//glBufferSubData(GL_ARRAY_BUFFER, sizeof(pos), sizeof(GL_INT) * objectCount, frame);
@@ -435,29 +415,26 @@ void Enemy::deathRight(Death die)
 
 	glBindVertexArray(vao);
 
-	if (die == Death::BOMB)
-	{
-		deathGrenadeRightSprite[spriteIdx / 2].Enable();
+	if (deathType == Death::BOMB) {
+		deathGrenadeRightSprite[spriteIdx].Enable();
 		glUniformMatrix4fv(uniforms.mv_matrix, 1, GL_FALSE, &(view * model)[0][0]);
 		glUniformMatrix4fv(uniforms.proj_matrix, 1, GL_FALSE, &(projection)[0][0]);
 		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-		deathGrenadeRightSprite[spriteIdx / 2].Disable();
+		deathGrenadeRightSprite[spriteIdx].Disable();
 	}
-	else if (die == Death::SHOT)
-	{
-		deathGunRightSprite[spriteIdx / 2].Enable();
+	else if (deathType == Death::SHOT) {
+		deathGunRightSprite[spriteIdx].Enable();
 		glUniformMatrix4fv(uniforms.mv_matrix, 1, GL_FALSE, &(view * model)[0][0]);
 		glUniformMatrix4fv(uniforms.proj_matrix, 1, GL_FALSE, &(projection)[0][0]);
 		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-		deathGunRightSprite[spriteIdx / 2].Disable();
+		deathGunRightSprite[spriteIdx].Disable();
 	}
-	else if (die == Death::STAB)
-	{
-		deathKnifeRightSprite[spriteIdx / 2].Enable();
+	else if (deathType == Death::STAB) {
+		deathKnifeRightSprite[spriteIdx].Enable();
 		glUniformMatrix4fv(uniforms.mv_matrix, 1, GL_FALSE, &(view * model)[0][0]);
 		glUniformMatrix4fv(uniforms.proj_matrix, 1, GL_FALSE, &(projection)[0][0]);
 		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-		deathKnifeRightSprite[spriteIdx / 2].Disable();
+		deathKnifeRightSprite[spriteIdx].Disable();
 	}
 
 	glBindVertexArray(0);

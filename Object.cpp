@@ -13,23 +13,29 @@ Object::~Object()
 {
 }
 
-float Object::getMapLocationX(float sceneLocX) {
-	return ((((pos.x + 1.0f) / 2.0f) * 0.04731f) + sceneLocX - 0.022f);
+float Object::getMapLocationX() 
+{
+	//return ((((pos.x + 1.0f) / 2.0f) * 0.04731f) + sceneLocX - 0.022f);
+	return mapLocation.x;
 }
 
-glm::vec2 Object::getMapLocation(float sceneLocX, glm::vec2 cur) {
-	return glm::vec2((((cur.x + 1.0f) / 2.0f) * 0.04731f) + sceneLocX - 0.022f, cur.y);
+float Object::getMapLocationY()
+{
+	return mapLocation.y;
 }
 
-glm::vec2 Object::getMapLocation(float sceneLocX) {
-	return glm::vec2((((pos.x + 1.0f) / 2.0f) * 0.04731f) + sceneLocX - 0.022f, pos.y);
+glm::vec2 Object::getMapLocation() 
+{
+	//return glm::vec2((((cur.x + 1.0f) / 2.0f) * 0.04731f) + sceneLocX - 0.022f, cur.y);
+	return mapLocation;
 }
 
-void Object::setScreenPosX(float sceneLocX) {
+void Object::setScreenPosX(float sceneLocX)
+{
 	// mapPosX: 窗口目前移動到的位置
 	// mapLocationX: 敵人在 map 中的位置
 
-	float dis_has_dir = mapLocationX - sceneLocX;
+	float dis_has_dir = mapLocation.x - sceneLocX;
 	float dis = fabs(dis_has_dir);
 
 	if (dis < SCENE_WIDTH_IN_SCREEN) {
@@ -40,8 +46,24 @@ void Object::setScreenPosX(float sceneLocX) {
 	else {
 		pos.x = -10.0f;
 	}
-
 	return;
+}
+
+void Object::setScreenPosY(float sceneLocY)
+{
+	pos.y = sceneLocY;
+}
+
+float Object::getScreenPosX() {
+	return pos.x;
+}
+
+float Object::getScreenPosY() {
+	return pos.y;
+}
+
+glm::vec2 Object::getScreenPos() {
+	return pos;
 }
 
 void Object::initialize(const char* vertexShader, const char* fragmentShader)

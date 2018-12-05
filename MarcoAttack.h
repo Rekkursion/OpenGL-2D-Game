@@ -8,19 +8,20 @@ static std::string marcoAttack[] =
 enum MAttack {
 	BULLET, PINEAPPLE
 };
-enum Action {
-	FLY, EXPLODE
-};
-enum Orientation {
-	L, R, U
-};
 
 class MarcoAttack : public Object {
 public:
-	MarcoAttack(MAttack, Orientation, float, float, float);
+	static float KNIFE_ATTACK_GAP_LEFT;
+	static float KNIFE_ATTACK_GAP_RIGHT;
+	static float BULLET_ATTACK_GAP_X;
+	static float BULLET_ATTACK_GAP_Y;
+	static float GRENADE_ATTACK_GAP_X;
+	static float GRENADE_ATTACK_GAP_Y;
+	static float GRENADE_ATTACK_RANGE;
+
+	MarcoAttack(MAttack, Orientation, float, float);
 	~MarcoAttack();
 
-	glm::vec2 getMapLocation(float sceneLocX, glm::vec2 cur);
 	bool nextFrame(void);
 
 	// Bullet
@@ -48,6 +49,7 @@ public:
 
 private:
 	void initSprite(void);
+
 	float pineappleCurveHighUp[8] = { 0.020, 0.019, 0.018, 0.017, 0.016, 0.015, 0.014, 0.013 };
 	float pineappleCurveHighDown[12] = { 0.005, 0.006, 0.008, 0.012, 0.018, 0.026, 0.036, 0.048, 0.062, 0.078, 0.096, 0.116 };
 	float pineappleCurveLowUp[3] = { 0.045, 0.030, 0.015 };
@@ -67,7 +69,5 @@ private:
 	// Explosion
 	Sprite2D bulletExplosionSprite[11];
 	Sprite2D pineappleExplosionSprite[20];
-
-	float mapOffsetX;
 };
 
