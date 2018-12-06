@@ -18,11 +18,8 @@ Enemy::Enemy(Arms t = DALLY, Side d = RSIDE, float InitX = 0.0, float InitY = -0
 	side = d;
 
 	pos = glm::vec2(InitX, InitY);
-	//moveSpeed = glm::vec2(0.055f, 0.1f);
 	mapLocation.x = mapLocationList[enemyNum];
-	mapLocation.y = InitY;
-	//setScreenPosX(sceneLocX);
-	//setScreenPosY(mapLocation.y);
+	setHeight();
 
 	enemyNum++;
 	if (enemyNum >= (sizeof(mapLocationList) / sizeof(float)))
@@ -302,6 +299,7 @@ void Enemy::restLeft() {
 void Enemy::walkLeft(float sceneLocX) {
 	mapLocation.x += moveSpeed.x;
 	setScreenPosX(sceneLocX);
+	setHeight();
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(pos), &pos);
 	//glBufferSubData(GL_ARRAY_BUFFER, sizeof(pos), sizeof(GL_INT) * objectCount, frame);
@@ -448,6 +446,7 @@ void Enemy::restRight() {
 void Enemy::walkRight(float sceneLocX) {
 	mapLocation.x -= moveSpeed.x;
 	setScreenPosX(sceneLocX);
+	setHeight();
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(pos), &pos);
 	//glBufferSubData(GL_ARRAY_BUFFER, sizeof(pos), sizeof(GL_INT) * objectCount, frame);

@@ -40,7 +40,7 @@ void Marco::reborn() {
 	moveSpeed.y = 0.1f;
 
 	mapLocation.y = INIT_MAP_LOC_Y;
-	setScreenPosY(INIT_MAP_LOC_Y);
+	setHeight();
 
 	canMove = true;
 	atCentre = false;
@@ -396,6 +396,7 @@ void Marco::walkLeft(float sceneLocX)
 	
 	mapLocation.x -= moveSpeed.x;
 	setScreenPosX(sceneLocX);
+	setHeight();
 
 	//std::cout << "pos.x " << pos.x << ", canMove: " << canMove << ", atCentre: " << atCentre << std::endl;
 
@@ -780,6 +781,7 @@ void Marco::walkRight(float sceneLocX)
 
 	mapLocation.x += moveSpeed.x;
 	setScreenPosX(sceneLocX);
+	setHeight();
 
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(pos), &pos);

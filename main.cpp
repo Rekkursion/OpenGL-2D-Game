@@ -299,7 +299,7 @@ void My_Display() {
 		// Dot light render
 		if (dotLight.getScreenPosZ() >= 0.0f) {
 			//glEnable(GL_DEPTH_TEST);
-			dotLight.render(marco.getScreenPosX());
+			dotLight.render(marco.getScreenPosX(), marco.getScreenPosY());
 			//glDisable(GL_DEPTH_TEST);
 		}
 
@@ -506,7 +506,7 @@ void My_Display() {
 			gapX = fabs(it_ea->getMapLocationX() - marco.getMapLocationX());
 			gapY = fabs(it_ea->getMapLocationY() - 0.25 - marco.getMapLocationY());
 
-			if (it_ea->attack == EAttack::BLINK && gapX < EnemyAttack::BULLET_ATTACK_GAP_X && gapY < EnemyAttack::BULLET_ATTACK_GAP_Y && !marco.isDieing && !marco.noDamageStatus) {
+			if (it_ea->attack == EAttack::BLINK && gapX < EnemyAttack::BULLET_ATTACK_GAP_X && gapY < EnemyAttack::BULLET_ATTACK_GAP_Y && it_ea->getMapLocationY() > marco.getMapLocationY() && !marco.isDieing && !marco.noDamageStatus) {
 				it_ea->action = Action::EXPLODE;
 
 				marco.initSpriteIndex();
@@ -973,7 +973,7 @@ void My_Display() {
 		// Dot light render
 		if (dotLight.getScreenPosZ() < 0.0f) {
 			//glEnable(GL_DEPTH_TEST);
-			dotLight.render(marco.getScreenPosX());
+			dotLight.render(marco.getScreenPosX(), marco.getScreenPosY());
 			//glDisable(GL_DEPTH_TEST);
 		}
 	}

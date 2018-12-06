@@ -8,11 +8,11 @@
 class DotLight: public Object {
 public:
 	DotLight();
-	DotLight(float);
+	DotLight(float, float);
 	~DotLight();
 
 	void initialize(const char*, const char*);
-	void render(float);
+	void render(float, float);
 	float getScreenPosZ();
 
 private:

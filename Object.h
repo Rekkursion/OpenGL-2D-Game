@@ -31,6 +31,7 @@ public:
 	virtual float getScreenPosX();
 	virtual float getScreenPosY();
 	virtual glm::vec2 getScreenPos();
+	void setHeight();
 
 	bool canMove;
 	GLuint vao;
@@ -48,9 +49,6 @@ protected:
 
 	glm::vec2 pos;
 	glm::vec2 moveSpeed;
-
-	//float mapLocationX;
-	//float mapLocationY;
 	glm::vec2 mapLocation;
 
 	virtual void initSprite(void);

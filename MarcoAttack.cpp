@@ -297,6 +297,13 @@ void MarcoAttack::pineappleFlyLeft(float scenePosX) {
 	mapLocation.y += moveSpeed.y;
 	setScreenPosY(mapLocation.y);
 
+	//float generalY = pos.y;
+	//setHeight();
+	//float floorY = pos.y;
+	//float diff = floorY + 0.8f;
+	//
+	//pos.y = generalY + diff;
+
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(pos), &pos);
 	//glBufferSubData(GL_ARRAY_BUFFER, sizeof(pos), sizeof(GL_INT) * objectCount, frame);

@@ -2,10 +2,10 @@
 
 
 
-DotLight::DotLight(): DotLight(0.0f) {
+DotLight::DotLight(): DotLight(0.0f, 0.0f) {
 }
 
-DotLight::DotLight(float marcoScreenPosX) {
+DotLight::DotLight(float marcoScreenPosX, float marcoScreenPosY) {
 	radAngle = 0.0f;
 	radius = DOT_LIGHT_SCREEN_RADIUS;
 	screenPos3D = glm::vec3(marcoScreenPosX + radius, -0.63f, 0.0f);
@@ -27,8 +27,8 @@ float DotLight::getScreenPosZ() {
 	return screenPos3D.z;
 }
 
-void DotLight::render(float marcoScreenPosX) {
-	screenPos3D.xz = glm::vec2(cosf(radAngle) * radius + marcoScreenPosX, sinf(radAngle) * radius);
+void DotLight::render(float marcoScreenPosX, float marcoScreenPosY) {
+	screenPos3D.xyz = glm::vec3(cosf(radAngle) * radius + marcoScreenPosX, marcoScreenPosY + 0.17f, sinf(radAngle) * radius);
 	pos = screenPos3D.xy;
 
 	radAngle += DOT_LIGHT_SCREEN_ANGLE_SPEED;
