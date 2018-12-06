@@ -9,11 +9,26 @@
 #define TEX_SIZE_WIDTH		(0.17f)
 #define BLINK_TIME			70
 
-static std::string stateSymbols[] = {
-	"Idle", "Walk", "Stop", "Jump", "Fall", "JumpForward", "Redirect", "Knife" ,"Gun", "Grenade", "Up", "GunUp" , "IdleUp"
-};
+//static std::string stateSymbols[] = {
+//	"Idle", "Walk", "Stop", "Jump", "Fall", "JumpForward", "Redirect", "Knife" ,"Gun", "Grenade", "Up", "GunUp" , "IdleUp"
+//};
 enum State {
-	IDLE, WALK, STOP, JUMP, FALL, JUMP_FORWARD, REDIRECT, KNIFE, GUN, GRENADE, UP, GUNUP, IDLEUP, DEATH_WHICH_ATTACK_FROM_LEFT, DEATH_WHICH_ATTACK_FROM_RIGHT
+	IDLE,
+	WALK,
+	STOP,
+	JUMP,
+	FALL,
+	JUMP_FORWARD,
+	REDIRECT,
+	KNIFE,
+	GUN,
+	GRENADE,
+	UP,
+	GUNUP,
+	IDLEUP,
+	DEATH_WHICH_ATTACK_FROM_LEFT,
+	DEATH_WHICH_ATTACK_FROM_RIGHT,
+	VICTORY
 };
 enum Direction {
 	LEFT, RIGHT
@@ -48,6 +63,7 @@ public:
 	void shootUpLeft(void);
 	void grenadeLeft(void);
 	void deathLeft(void);
+	void victoryLeft(glm::vec2);
 
 	// Right
 	void RtoL(void);
@@ -64,10 +80,12 @@ public:
 	void shootUpRight(void);
 	void grenadeRight(void);
 	void deathRight(void);
+	void victoryRight(glm::vec2);
 
 	State state;
 	Direction direction;
 	int blinkingCounter;
+	glm::vec3 dotLightScreenPos3D;
 	bool isDieing;
 	bool noDamageStatus;
 
@@ -89,6 +107,7 @@ private:
 	Sprite2D shootUpLeftSprite[12];
 	Sprite2D grenadeLeftSprite[7];
 	Sprite2D deathLeftSprite[10];
+	Sprite2D victoryLeftSprite[7];
 
 	// Right
 	Sprite2D RtoLSprite[4];
@@ -105,8 +124,9 @@ private:
 	Sprite2D shootUpRightSprite[12];
 	Sprite2D grenadeRightSprite[7];
 	Sprite2D deathRightSprite[10];
+	Sprite2D victoryRightSprite[7];
 
 	bool keyboardState[MAX_KEY_NUM];
 	GLint blinkingLocation;
+	GLint dotLightScreenPos3DLocation;
 };
-

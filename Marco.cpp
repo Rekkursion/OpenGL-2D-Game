@@ -58,6 +58,7 @@ int Marco::getSpriteId()
 void Marco::initSprite() 
 {
 	blinkingLocation = glGetUniformLocation(program, "blinkingcounter");
+	dotLightScreenPos3DLocation = glGetUniformLocation(program, "pos3d");
 
 	// Initial LEFT
 	// Initial Left to Right
@@ -171,6 +172,14 @@ void Marco::initSprite()
 		std::string filename = "";
 		stream >> filename;
 		deathLeftSprite[i].Init(filename, 0);
+	}
+	// Initial victory left
+	for (int i = 0; i < 7; i++) {
+		std::stringstream stream;
+		stream << "../media/Marco/Left/Victory/" << i << ".png";
+		std::string filename = "";
+		stream >> filename;
+		victoryLeftSprite[i].Init(filename, 0);
 	}
 	
 	
@@ -287,6 +296,14 @@ void Marco::initSprite()
 		stream >> filename;
 		deathRightSprite[i].Init(filename, 0);
 	}
+	// Initial victory right
+	for (int i = 0; i < 7; i++) {
+		std::stringstream stream;
+		stream << "../media/Marco/Right/Victory/" << i << ".png";
+		std::string filename = "";
+		stream >> filename;
+		victoryRightSprite[i].Init(filename, 0);
+	}
 }
 
 // LEFT
@@ -309,6 +326,7 @@ void Marco::LtoR()
 	glUniformMatrix4fv(uniforms.mv_matrix, 1, GL_FALSE, &(view * model)[0][0]);
 	glUniformMatrix4fv(uniforms.proj_matrix, 1, GL_FALSE, &(projection)[0][0]);
 	glUniform1f(blinkingLocation, (float)blinkingCounter);
+	glUniform3fv(dotLightScreenPos3DLocation, 1, &dotLightScreenPos3D[0]);
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 	idleLeftSprite[spriteIdx].Disable();
 
@@ -332,6 +350,7 @@ void Marco::idleLeft()
 	glUniformMatrix4fv(uniforms.mv_matrix, 1, GL_FALSE, &(view * model)[0][0]);
 	glUniformMatrix4fv(uniforms.proj_matrix, 1, GL_FALSE, &(projection)[0][0]);
 	glUniform1f(blinkingLocation, (float)blinkingCounter);
+	glUniform3fv(dotLightScreenPos3DLocation, 1, &dotLightScreenPos3D[0]);
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 	idleLeftSprite[spriteIdx].Disable();
 
@@ -355,6 +374,7 @@ void Marco::stopLeft()
 	glUniformMatrix4fv(uniforms.mv_matrix, 1, GL_FALSE, &(view * model)[0][0]);
 	glUniformMatrix4fv(uniforms.proj_matrix, 1, GL_FALSE, &(projection)[0][0]);
 	glUniform1f(blinkingLocation, (float)blinkingCounter);
+	glUniform3fv(dotLightScreenPos3DLocation, 1, &dotLightScreenPos3D[0]);
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 	stopLeftSprite[spriteIdx].Disable();
 
@@ -393,6 +413,7 @@ void Marco::walkLeft(float sceneLocX)
 	glUniformMatrix4fv(uniforms.mv_matrix, 1, GL_FALSE, &(view * model)[0][0]);
 	glUniformMatrix4fv(uniforms.proj_matrix, 1, GL_FALSE, &(projection)[0][0]);
 	glUniform1f(blinkingLocation, (float)blinkingCounter);
+	glUniform3fv(dotLightScreenPos3DLocation, 1, &dotLightScreenPos3D[0]);
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 	walkLeftSprite[spriteIdx].Disable();
 
@@ -416,6 +437,7 @@ void Marco::upLeft()
 	glUniformMatrix4fv(uniforms.mv_matrix, 1, GL_FALSE, &(view * model)[0][0]);
 	glUniformMatrix4fv(uniforms.proj_matrix, 1, GL_FALSE, &(projection)[0][0]);
 	glUniform1f(blinkingLocation, (float)blinkingCounter);
+	glUniform3fv(dotLightScreenPos3DLocation, 1, &dotLightScreenPos3D[0]);
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 	upLeftSprite[spriteIdx].Disable();
 
@@ -439,6 +461,7 @@ void Marco::idleUpLeft()
 	glUniformMatrix4fv(uniforms.mv_matrix, 1, GL_FALSE, &(view * model)[0][0]);
 	glUniformMatrix4fv(uniforms.proj_matrix, 1, GL_FALSE, &(projection)[0][0]);
 	glUniform1f(blinkingLocation, (float)blinkingCounter);
+	glUniform3fv(dotLightScreenPos3DLocation, 1, &dotLightScreenPos3D[0]);
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 	idleUpLeftSprite[spriteIdx].Disable();
 
@@ -462,6 +485,7 @@ void Marco::downLeft()
 	glUniformMatrix4fv(uniforms.mv_matrix, 1, GL_FALSE, &(view * model)[0][0]);
 	glUniformMatrix4fv(uniforms.proj_matrix, 1, GL_FALSE, &(projection)[0][0]);
 	glUniform1f(blinkingLocation, (float)blinkingCounter);
+	glUniform3fv(dotLightScreenPos3DLocation, 1, &dotLightScreenPos3D[0]);
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 	downLeftSprite[spriteIdx].Disable();
 
@@ -488,6 +512,7 @@ void Marco::jumpLeft()
 	glUniformMatrix4fv(uniforms.mv_matrix, 1, GL_FALSE, &(view * model)[0][0]);
 	glUniformMatrix4fv(uniforms.proj_matrix, 1, GL_FALSE, &(projection)[0][0]);
 	glUniform1f(blinkingLocation, (float)blinkingCounter);
+	glUniform3fv(dotLightScreenPos3DLocation, 1, &dotLightScreenPos3D[0]);
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 	jumpLeftSprite[spriteIdx].Disable();
 
@@ -514,6 +539,7 @@ void Marco::fallLeft()
 	glUniformMatrix4fv(uniforms.mv_matrix, 1, GL_FALSE, &(view * model)[0][0]);
 	glUniformMatrix4fv(uniforms.proj_matrix, 1, GL_FALSE, &(projection)[0][0]);
 	glUniform1f(blinkingLocation, (float)blinkingCounter);
+	glUniform3fv(dotLightScreenPos3DLocation, 1, &dotLightScreenPos3D[0]);
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 	fallLeftSprite[spriteIdx].Disable();
 
@@ -537,6 +563,7 @@ void Marco::knifeLeft()
 	glUniformMatrix4fv(uniforms.mv_matrix, 1, GL_FALSE, &(view * model)[0][0]);
 	glUniformMatrix4fv(uniforms.proj_matrix, 1, GL_FALSE, &(projection)[0][0]);
 	glUniform1f(blinkingLocation, (float)blinkingCounter);
+	glUniform3fv(dotLightScreenPos3DLocation, 1, &dotLightScreenPos3D[0]);
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 	knifeLeftSprite[spriteIdx].Disable();
 
@@ -560,6 +587,7 @@ void Marco::shootLeft()
 	glUniformMatrix4fv(uniforms.mv_matrix, 1, GL_FALSE, &(view * model)[0][0]);
 	glUniformMatrix4fv(uniforms.proj_matrix, 1, GL_FALSE, &(projection)[0][0]);
 	glUniform1f(blinkingLocation, (float)blinkingCounter);
+	glUniform3fv(dotLightScreenPos3DLocation, 1, &dotLightScreenPos3D[0]);
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 	shootLeftSprite[spriteIdx].Disable();
 
@@ -583,6 +611,7 @@ void Marco::shootUpLeft()
 	glUniformMatrix4fv(uniforms.mv_matrix, 1, GL_FALSE, &(view * model)[0][0]);
 	glUniformMatrix4fv(uniforms.proj_matrix, 1, GL_FALSE, &(projection)[0][0]);
 	glUniform1f(blinkingLocation, (float)blinkingCounter);
+	glUniform3fv(dotLightScreenPos3DLocation, 1, &dotLightScreenPos3D[0]);
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 	shootUpLeftSprite[spriteIdx].Disable();
 
@@ -606,6 +635,7 @@ void Marco::grenadeLeft()
 	glUniformMatrix4fv(uniforms.mv_matrix, 1, GL_FALSE, &(view * model)[0][0]);
 	glUniformMatrix4fv(uniforms.proj_matrix, 1, GL_FALSE, &(projection)[0][0]);
 	glUniform1f(blinkingLocation, (float)blinkingCounter);
+	glUniform3fv(dotLightScreenPos3DLocation, 1, &dotLightScreenPos3D[0]);
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 	grenadeLeftSprite[spriteIdx].Disable();
 
@@ -628,8 +658,34 @@ void Marco::deathLeft() {
 	glUniformMatrix4fv(uniforms.mv_matrix, 1, GL_FALSE, &(view * model)[0][0]);
 	glUniformMatrix4fv(uniforms.proj_matrix, 1, GL_FALSE, &(projection)[0][0]);
 	glUniform1f(blinkingLocation, (float)blinkingCounter);
+	glUniform3fv(dotLightScreenPos3DLocation, 1, &dotLightScreenPos3D[0]);
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 	deathLeftSprite[spriteIdx].Disable();
+
+	glBindVertexArray(0);
+	glUseProgram(0);
+}
+// victory left
+void Marco::victoryLeft(glm::vec2 screenPos) {
+	pos = screenPos;
+
+	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(pos), &pos);
+	//glBufferSubData(GL_ARRAY_BUFFER, sizeof(pos), sizeof(GL_INT) * objectCount, frame);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	//Update shaders' input variable
+	glUseProgram(program);
+
+	glBindVertexArray(vao);
+
+	victoryLeftSprite[spriteIdx].Enable();
+	glUniformMatrix4fv(uniforms.mv_matrix, 1, GL_FALSE, &(view * model)[0][0]);
+	glUniformMatrix4fv(uniforms.proj_matrix, 1, GL_FALSE, &(projection)[0][0]);
+	glUniform1f(blinkingLocation, (float)blinkingCounter);
+	glUniform3fv(dotLightScreenPos3DLocation, 1, &dotLightScreenPos3D[0]);
+	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+	victoryLeftSprite[spriteIdx].Disable();
 
 	glBindVertexArray(0);
 	glUseProgram(0);
@@ -655,6 +711,7 @@ void Marco::RtoL()
 	glUniformMatrix4fv(uniforms.mv_matrix, 1, GL_FALSE, &(view * model)[0][0]);
 	glUniformMatrix4fv(uniforms.proj_matrix, 1, GL_FALSE, &(projection)[0][0]);
 	glUniform1f(blinkingLocation, (float)blinkingCounter);
+	glUniform3fv(dotLightScreenPos3DLocation, 1, &dotLightScreenPos3D[0]);
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 	idleLeftSprite[spriteIdx].Disable();
 
@@ -678,6 +735,7 @@ void Marco::idleRight()
 	glUniformMatrix4fv(uniforms.mv_matrix, 1, GL_FALSE, &(view * model)[0][0]);
 	glUniformMatrix4fv(uniforms.proj_matrix, 1, GL_FALSE, &(projection)[0][0]);
 	glUniform1f(blinkingLocation, (float)blinkingCounter);
+	glUniform3fv(dotLightScreenPos3DLocation, 1, &dotLightScreenPos3D[0]);
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 	idleRightSprite[spriteIdx].Disable();
 
@@ -701,6 +759,7 @@ void Marco::stopRight()
 	glUniformMatrix4fv(uniforms.mv_matrix, 1, GL_FALSE, &(view * model)[0][0]);
 	glUniformMatrix4fv(uniforms.proj_matrix, 1, GL_FALSE, &(projection)[0][0]);
 	glUniform1f(blinkingLocation, (float)blinkingCounter);
+	glUniform3fv(dotLightScreenPos3DLocation, 1, &dotLightScreenPos3D[0]);
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 	stopRightSprite[spriteIdx].Disable();
 
@@ -736,6 +795,7 @@ void Marco::walkRight(float sceneLocX)
 	glUniformMatrix4fv(uniforms.mv_matrix, 1, GL_FALSE, &(view * model)[0][0]);
 	glUniformMatrix4fv(uniforms.proj_matrix, 1, GL_FALSE, &(projection)[0][0]);
 	glUniform1f(blinkingLocation, (float)blinkingCounter);
+	glUniform3fv(dotLightScreenPos3DLocation, 1, &dotLightScreenPos3D[0]);
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 	walkRightSprite[spriteIdx].Disable();
 
@@ -759,6 +819,7 @@ void Marco::upRight()
 	glUniformMatrix4fv(uniforms.mv_matrix, 1, GL_FALSE, &(view * model)[0][0]);
 	glUniformMatrix4fv(uniforms.proj_matrix, 1, GL_FALSE, &(projection)[0][0]);
 	glUniform1f(blinkingLocation, (float)blinkingCounter);
+	glUniform3fv(dotLightScreenPos3DLocation, 1, &dotLightScreenPos3D[0]);
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 	upRightSprite[spriteIdx].Disable();
 
@@ -782,6 +843,7 @@ void Marco::idleUpRight()
 	glUniformMatrix4fv(uniforms.mv_matrix, 1, GL_FALSE, &(view * model)[0][0]);
 	glUniformMatrix4fv(uniforms.proj_matrix, 1, GL_FALSE, &(projection)[0][0]);
 	glUniform1f(blinkingLocation, (float)blinkingCounter);
+	glUniform3fv(dotLightScreenPos3DLocation, 1, &dotLightScreenPos3D[0]);
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 	idleUpRightSprite[spriteIdx].Disable();
 
@@ -805,6 +867,7 @@ void Marco::downRight()
 	glUniformMatrix4fv(uniforms.mv_matrix, 1, GL_FALSE, &(view * model)[0][0]);
 	glUniformMatrix4fv(uniforms.proj_matrix, 1, GL_FALSE, &(projection)[0][0]);
 	glUniform1f(blinkingLocation, (float)blinkingCounter);
+	glUniform3fv(dotLightScreenPos3DLocation, 1, &dotLightScreenPos3D[0]);
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 	downRightSprite[spriteIdx].Disable();
 
@@ -830,6 +893,7 @@ void Marco::jumpRight() {
 	glUniformMatrix4fv(uniforms.mv_matrix, 1, GL_FALSE, &(view * model)[0][0]);
 	glUniformMatrix4fv(uniforms.proj_matrix, 1, GL_FALSE, &(projection)[0][0]);
 	glUniform1f(blinkingLocation, (float)blinkingCounter);
+	glUniform3fv(dotLightScreenPos3DLocation, 1, &dotLightScreenPos3D[0]);
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 	jumpRightSprite[spriteIdx].Disable();
 
@@ -855,6 +919,7 @@ void Marco::fallRight() {
 	glUniformMatrix4fv(uniforms.mv_matrix, 1, GL_FALSE, &(view * model)[0][0]);
 	glUniformMatrix4fv(uniforms.proj_matrix, 1, GL_FALSE, &(projection)[0][0]);
 	glUniform1f(blinkingLocation, (float)blinkingCounter);
+	glUniform3fv(dotLightScreenPos3DLocation, 1, &dotLightScreenPos3D[0]);
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 	fallRightSprite[spriteIdx].Disable();
 
@@ -878,6 +943,7 @@ void Marco::knifeRight()
 	glUniformMatrix4fv(uniforms.mv_matrix, 1, GL_FALSE, &(view * model)[0][0]);
 	glUniformMatrix4fv(uniforms.proj_matrix, 1, GL_FALSE, &(projection)[0][0]);
 	glUniform1f(blinkingLocation, (float)blinkingCounter);
+	glUniform3fv(dotLightScreenPos3DLocation, 1, &dotLightScreenPos3D[0]);
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 	knifeRightSprite[spriteIdx].Disable();
 
@@ -901,6 +967,7 @@ void Marco::shootRight()
 	glUniformMatrix4fv(uniforms.mv_matrix, 1, GL_FALSE, &(view * model)[0][0]);
 	glUniformMatrix4fv(uniforms.proj_matrix, 1, GL_FALSE, &(projection)[0][0]);
 	glUniform1f(blinkingLocation, (float)blinkingCounter);
+	glUniform3fv(dotLightScreenPos3DLocation, 1, &dotLightScreenPos3D[0]);
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 	shootRightSprite[spriteIdx].Disable();
 
@@ -924,6 +991,7 @@ void Marco::shootUpRight()
 	glUniformMatrix4fv(uniforms.mv_matrix, 1, GL_FALSE, &(view * model)[0][0]);
 	glUniformMatrix4fv(uniforms.proj_matrix, 1, GL_FALSE, &(projection)[0][0]);
 	glUniform1f(blinkingLocation, (float)blinkingCounter);
+	glUniform3fv(dotLightScreenPos3DLocation, 1, &dotLightScreenPos3D[0]);
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 	shootUpRightSprite[spriteIdx].Disable();
 
@@ -947,6 +1015,7 @@ void Marco::grenadeRight()
 	glUniformMatrix4fv(uniforms.mv_matrix, 1, GL_FALSE, &(view * model)[0][0]);
 	glUniformMatrix4fv(uniforms.proj_matrix, 1, GL_FALSE, &(projection)[0][0]);
 	glUniform1f(blinkingLocation, (float)blinkingCounter);
+	glUniform3fv(dotLightScreenPos3DLocation, 1, &dotLightScreenPos3D[0]);
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 	grenadeRightSprite[spriteIdx].Disable();
 
@@ -969,8 +1038,34 @@ void Marco::deathRight() {
 	glUniformMatrix4fv(uniforms.mv_matrix, 1, GL_FALSE, &(view * model)[0][0]);
 	glUniformMatrix4fv(uniforms.proj_matrix, 1, GL_FALSE, &(projection)[0][0]);
 	glUniform1f(blinkingLocation, (float)blinkingCounter);
+	glUniform3fv(dotLightScreenPos3DLocation, 1, &dotLightScreenPos3D[0]);
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 	deathRightSprite[spriteIdx].Disable();
+
+	glBindVertexArray(0);
+	glUseProgram(0);
+}
+// victory right
+void Marco::victoryRight(glm::vec2 screenPos) {
+	pos = screenPos;
+
+	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(pos), &pos);
+	//glBufferSubData(GL_ARRAY_BUFFER, sizeof(pos), sizeof(GL_INT) * objectCount, frame);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	//Update shaders' input variable
+	glUseProgram(program);
+
+	glBindVertexArray(vao);
+
+	victoryRightSprite[spriteIdx].Enable();
+	glUniformMatrix4fv(uniforms.mv_matrix, 1, GL_FALSE, &(view * model)[0][0]);
+	glUniformMatrix4fv(uniforms.proj_matrix, 1, GL_FALSE, &(projection)[0][0]);
+	glUniform1f(blinkingLocation, (float)blinkingCounter);
+	glUniform3fv(dotLightScreenPos3DLocation, 1, &dotLightScreenPos3D[0]);
+	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+	victoryRightSprite[spriteIdx].Disable();
 
 	glBindVertexArray(0);
 	glUseProgram(0);

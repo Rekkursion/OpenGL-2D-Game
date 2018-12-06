@@ -175,7 +175,7 @@ void MarcoAttack::bulletFlyLeft(float scenePosX) {
 
 	//Update shaders' input variable
 	glUseProgram(program);
-
+	
 	glBindVertexArray(vao);
 
 	bulletFlyLeftSprite[spriteIdx].Enable();

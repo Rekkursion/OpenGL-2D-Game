@@ -9,6 +9,7 @@
 #include "Scene.h"
 #include "PointSprite.h"
 #include "FrameEffectManager.h"
+#include "DotLight.h"
 #include "NumberObject.h"
 
 using namespace glm;
@@ -63,11 +64,12 @@ enum DisplayMode {
 };
 DisplayMode displayMode = DisplayMode::NORMAL;
 
-Marco marco;
+Marco marco, victoryMarcoRight;
 Scene scene;
 vector<Enemy> enemyList;
 NumberObject digitOne, digitTen;
 NumberObject timeDigits[MAX_TIME_DIGIT];
+DotLight dotLight;
 
 vector<MarcoAttack> mAttack;
 vector<EnemyAttack> eAttack;
@@ -98,6 +100,7 @@ int fboParamMenu;
 int fboChoiceMenu;
 int eventMenu;
 int restartMenu;
+bool showDotLighting;
 
 int main(int argc, char *argv[])
 {
@@ -163,6 +166,7 @@ int main(int argc, char *argv[])
 	eventMenu = glutCreateMenu(menuEvents);
 	glutAddMenuEntry("Normal mode", 9999);
 	glutAddMenuEntry("One enemy", 9998);
+	glutAddMenuEntry("Dot light effect", 9997);
 	glutAddSubMenu("Point sprite effect parameters", fboParamMenu);
 	glutAddSubMenu("Framebuffer object effects", fboChoiceMenu);
 
@@ -199,6 +203,8 @@ void My_Init()
 
 	//Initialize shaders
 	marco.initialize("../shader/Marco/vertex.vs.glsl", "../shader/Marco/fragment.fs.glsl");
+	victoryMarcoRight.initialize("../shader/Marco/vertex.vs.glsl", "../shader/Marco/fragment.fs.glsl");
+	victoryMarcoRight.blinkingCounter = -1;
 	scene.initialize("../shader/Scene/vertex.vs.glsl", "../shader/Scene/fragment.fs.glsl");
 
 	// Enemies
@@ -240,7 +246,11 @@ void My_Init()
 	fboManager->initFrameBufferData("../shader/FBO/moreblack_fog.vs.glsl", "../shader/FBO/moreblack_fog.fs.glsl");
 	#endif // CGI
 
+	// Dot light
+	dotLight.initialize("../shader/DotLight/vertex.vs.glsl", "../shader/DotLight/fragment.fs.glsl");
+
 	isMissionCompleted = false;
+	showDotLighting = false;
 }
 // GLUT callback Functions
 // Display Function
@@ -285,6 +295,13 @@ void My_Display() {
 		for (int k = 0; k < POINT_SPRITE_NUM; k++)
 			pointSprite_snow_list[k].render(proj_matrix);
 		#endif // CGI
+
+		// Dot light render
+		if (dotLight.getScreenPosZ() >= 0.0f) {
+			//glEnable(GL_DEPTH_TEST);
+			dotLight.render(marco.getScreenPosX());
+			//glDisable(GL_DEPTH_TEST);
+		}
 
 		// =================================================
 
@@ -558,6 +575,7 @@ void My_Display() {
 
 		glm::vec2 currentPosition;
 		currentPosition = marco.getMapLocation();
+		marco.dotLightScreenPos3D = (showDotLighting ? glm::vec3(dotLight.getScreenPos(), dotLight.getScreenPosZ()) : vec3(10.0f));
 
 		// Left
 		if (marco.getKeyboard(GLUT_KEY_LEFT) && !marco.isDieing) {
@@ -723,6 +741,7 @@ void My_Display() {
 
 			}
 			else if (marco.state == State::DEATH_WHICH_ATTACK_FROM_LEFT || marco.state == State::DEATH_WHICH_ATTACK_FROM_RIGHT) {}
+			else if (marco.state == State::VICTORY) {}
 
 			// Idle
 			else {
@@ -950,14 +969,30 @@ void My_Display() {
 			cout << "delete\n";
 			eAttack.erase(eAttack.begin() + killAttack[kea]);
 		}
+
+		// Dot light render
+		if (dotLight.getScreenPosZ() < 0.0f) {
+			//glEnable(GL_DEPTH_TEST);
+			dotLight.render(marco.getScreenPosX());
+			//glDisable(GL_DEPTH_TEST);
+		}
 	}
 
 	// =================================================
 
 	if (isMissionCompleted) {
+		// Show cost time
 		for (int k = MAX_TIME_DIGIT - 1, tmpTime = currentTime; k >= 0; k--, tmpTime /= 10) {
 			timeDigits[k].setNumber(tmpTime % 10);
 			timeDigits[k].render();
+		}
+
+		// Marco victory
+		if (marco.state == State::VICTORY) {
+			marco.victoryLeft(glm::vec2(0.6, -0.8));
+			marco.nextFrame(7);
+			victoryMarcoRight.victoryRight(glm::vec2(-0.6, -0.8));
+			victoryMarcoRight.nextFrame(7);
 		}
 	}
 
@@ -1220,6 +1255,12 @@ void My_Counter(int val) {
 				digitOne.setLocation(glm::vec2(0.0f, -10.0f));
 				digitTen.setLocation(glm::vec2(0.0f, -10.0f));
 
+				marco.initSpriteIndex();
+				marco.state = State::VICTORY;
+
+				victoryMarcoRight.initSpriteIndex();
+				victoryMarcoRight.state = State::VICTORY;
+
 				glutTimerFunc(1000, My_Counter, 1);
 			}
 			else {
@@ -1275,6 +1316,10 @@ void menuEvents(int option) {
 			displayMode = DisplayMode::ONE_ENEMY;
 			Enemy::enemyNum = remainEnemyNum;
 			remainEnemyNum = 1;
+			break;
+
+		case 9997:
+			showDotLighting = !showDotLighting;
 			break;
 
 		default:
